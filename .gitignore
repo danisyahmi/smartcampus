@@ -1,0 +1,53 @@
+# --- Target Build Directories ---
+# Ignores all compiled Java .class files and packaged .jar artifacts across all modules
+target/
+**/target/
+
+# --- Maven Wrapper & Lifecycle Artifacts ---
+.mvn/wrapper/maven-wrapper.jar
+.mvn/timing.properties
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+
+# Maven Release Plugin Backups
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+
+# --- IDE Specific Configurations ---
+# VS Code
+.settings/
+.factorypath
+.project
+.classpath
+.vscode/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+**/out/
+
+# Eclipse
+.metadata/
+bin/
+**/bin/
+tmp/
+**/tmp/
+
+# --- OS-specific Temporary Files ---
+.DS_Store
+.DS_Store?
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# --- Application Runtime Configurations ---
+# Prevents locally configured active properties/secrets from leaking
+**/src/main/resources/application-local.properties
+**/src/main/resources/application-dev.properties
+*.log
