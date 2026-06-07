@@ -9,7 +9,7 @@ SmartCampus Connect operates as a distributed system where each business domain 
 
 ---
 
-## 🧩 Core Spring Boot Services
+## Core Spring Boot Services
 
 ### 1. Student Profile Service (`student-profile-service`)
 * **Port:** `8081`
