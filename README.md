@@ -29,7 +29,7 @@ SmartCampus Connect operates as a distributed system where each business domain 
 * **Responsibilities:** Acts strictly as a passive asynchronous consumer background worker.
 * **Operational Model:** Listens continuously on its dedicated TCP Socket server connection. When enrollment commits, payments resolve, or library events occur, it receives the raw socket stream data payload and processes the real-time notification alert context.
 
-### 4. Library / Booking Service (`library-booking-service`)
+### 4. Library / Booking / Order Service (`order-service`)
 * **Port:** `8084`
 * **Internal Pattern:** Controller (Dual REST/SOAP) ➡️ Service ➡️ Model
 * **Responsibilities:** Manages physical campus asset distributions, including study room reservations and library book loans.
