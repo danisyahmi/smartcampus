@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.smartcampus</groupId>
-	<artifactId>course-enrollment</artifactId>
+	<artifactId>student</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>course-enrollment</name>
+	<name>student</name>
 	<description/>
 	<url/>
 	<licenses>

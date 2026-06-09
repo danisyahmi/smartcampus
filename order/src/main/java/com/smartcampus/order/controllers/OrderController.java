@@ -16,7 +16,7 @@ import com.smartcampus.order.models.Order;
 @RequestMapping("/api/orders")
 public class OrderController {
     // USER_SERVICE_URL is injected from environment variable
-    private final String userServiceUrl = System.getenv().getOrDefault(
+    private final String studentServiceUrl = System.getenv().getOrDefault(
             "USER_SERVICE_URL",
             "http://localhost:8081");
 
@@ -30,22 +30,22 @@ public class OrderController {
         return orders;
     }
 
-    @GetMapping("/user/{userId}")
-    public Map<String, Object> getOrdersForUser(
-            @PathVariable int userId) {
-        // Call User Service to verify user exists
+    @GetMapping("/student/{studentId}")
+    public Map<String, Object> getOrdersForstudent(
+            @PathVariable int studentId) {
+        // Call student Service to verify student exists
         RestTemplate rt = new RestTemplate();
-        Object user = rt.getForObject(
-                userServiceUrl + "/api/users/" + userId,
+        Object student = rt.getForObject(
+                studentServiceUrl + "/api/students/" + studentId,
                 Object.class);
 
-        List<Order> userOrders = orders.stream()
-                .filter(o -> o.getUserId() == userId)
+        List<Order> studentOrders = orders.stream()
+                .filter(o -> o.getStudentId() == studentId)
                 .toList();
 
         return Map.of(
-                "user", user,
-                "orders", userOrders);
+                "student", student,
+                "orders", studentOrders);
     }
 
     @GetMapping("/health")

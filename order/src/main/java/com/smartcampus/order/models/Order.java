@@ -5,14 +5,13 @@ import lombok.Data;
 @Data
 public class Order {
     private int orderId;
-    private int userId;
+    private int studentId;
     private String item;
     private double price;
 
-    public Order(int orderId, int userId,
-            String item, double price) {
+    public Order(int orderId, int studentId, String item, double price) {
         this.orderId = orderId;
-        this.userId = userId;
+        this.studentId = studentId;
         this.item = item;
         this.price = price;
     }

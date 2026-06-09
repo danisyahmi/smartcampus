@@ -1,13 +1,13 @@
-package com.smartcampus.course_enrollment;
+package com.smartcampus.student;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class CourseEnrollmentApplication {
+public class StudentApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(CourseEnrollmentApplication.class, args);
+		SpringApplication.run(StudentApplication.class, args);
 	}
 
 }
