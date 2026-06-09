@@ -1,4 +1,4 @@
-package com.smartcampus.student_profile.services;
+package com.smartcampus.student.services;
 
 import org.springframework.stereotype.Service;
 
