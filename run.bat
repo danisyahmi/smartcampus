@@ -1,13 +1,16 @@
 @echo off
-set /p choice="Do you want to start (up) or stop (down) containers? (up/down): "
 
-if "%choice%"=="up" (
-    echo Starting Docker Compose...
-    docker compose up -d
-) else if "%choice%"=="down" (
-    echo Stopping Docker Compose...
+if "%~1"=="up" (
+    echo Bring containers UP...
+    docker compose up --build -d
+    
+    REM Sleep for 5 seconds
+    timeout /t 5 /nobreak >nul
+    
+    docker compose ps
+) else if "%~1"=="down" (
+    echo Taking containers DOWN...
     docker compose down
 ) else (
-    echo Invalid choice. Exiting.
+    echo Usage: %~nx0 {up^|down}
 )
-pause
