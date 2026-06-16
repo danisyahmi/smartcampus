@@ -1,58 +1,42 @@
 package com.smartcampus.booking.controllers;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.smartcampus.booking.services.BookingService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import java.util.Map;
-
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
-
-import com.smartcampus.booking.models.Booking;
 
 @RestController
 @RequestMapping("/api/bookings")
 public class BookingController {
-        // USER_SERVICE_URL is injected from environment variable
-        private final String studentServiceUrl = System.getenv().getOrDefault(
-                        "USER_SERVICE_URL",
-                        "http://localhost:8081");
 
-        private final List<Booking> bookings = new ArrayList<>(List.of(
-                        new Booking(101, 1, "Java Programming Book", 89.90),
-                        new Booking(102, 2, "Wireless Mouse", 45.00),
-                        new Booking(103, 1, "USB-C Hub", 120.00)));
+    @Autowired
+    private BookingService bookingService;
 
-        @GetMapping
-        public List<Booking> getAll() {
-                return bookings;
+    @PostMapping("/room")
+    public ResponseEntity<?> createRoomBooking(@RequestBody Map<String, String> requestPayload) {
+        String roomId = requestPayload.get("roomId");
+        String studentId = requestPayload.get("studentId");
+        String bookingDate = requestPayload.get("bookingDate");
+
+        // Validate incoming REST properties
+        if (roomId == null || studentId == null || bookingDate == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing required payload keys."));
         }
 
-        @GetMapping("/student/{studentId}")
-        public Map<String, Object> getbookingsForstudent(
-                        @PathVariable int studentId) {
-                // Call student Service to verify student exists
-                RestTemplate rt = new RestTemplate();
-                Object student = rt.getForObject(
-                                studentServiceUrl + "/api/students/" + studentId,
-                                Object.class);
+        // Bridge to the legacy SOAP backend system
+        Map<String, String> soapResult = bookingService.reserveLegacyRoom(roomId, studentId, bookingDate);
 
-                List<Booking> studentBookings = bookings.stream()
-                                .filter(o -> o.getStudentId() == studentId)
-                                .toList();
-
-                return Map.of(
-                                "student", student,
-                                "bookings", studentBookings);
+        if ("ERROR".equals(soapResult.get("status"))) {
+            return ResponseEntity.status(502).body(soapResult); // Bad Gateway if SOAP fails
         }
 
-        @GetMapping("/health")
-        public Map<String, String> health() {
-                return Map.of(
-                                "service", "booking-service",
-                                "status", "UP",
-                                "port", "8084");
-        }
+        return ResponseEntity.ok(soapResult); // Returns clean JSON response to client
+    }
+    
+    // Gateway health endpoint to satisfy your docker-compose layout requirements
+    @GetMapping("/health")
+    public ResponseEntity<String> healthCheck() {
+        return ResponseEntity.ok("Healthy");
+    }
 }
