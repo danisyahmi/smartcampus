@@ -105,6 +105,25 @@ services:
       timeout: 5s
       retries: 3
 
+    book:
+      build: ../book-api
+      container_name: book-api-svc
+      ports:
+        - "8086:8086"
+      environment:
+        # Use Docker service name for inter-service calls
+        USER_SERVICE_URL: http://student:8081
+      healthcheck:
+        test: [ "CMD", "wget", "-qO-", "http://localhost:8085/api/reports/health"]
+        interval: 10s
+        timeout: 5s
+        retries: 3
+      # depends_on:
+      #   report:
+      #     condition: service_healthy
+      networks:
+        - micronet
+        
   api-gateway:
     image: nginx:alpine
     container_name: gateway

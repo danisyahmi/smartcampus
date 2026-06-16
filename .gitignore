@@ -23,6 +23,7 @@ pom.xml.next
 .project
 .classpath
 .vscode/
+/test_api.sh
 
 # IntelliJ IDEA
 .idea/
