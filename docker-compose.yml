@@ -53,25 +53,22 @@ services:
     networks:
       - micronet
 
-  booking:
+  book:
     build: ./booking
-    container_name: booking-svc
+    container_name: book-api-svc
     ports:
       - "8084:8084"
-    environment:
-      # Use Docker service name for inter-service calls
-      USER_SERVICE_URL: http://student:8081
     healthcheck:
-      test: [ "CMD", "wget", "-qO-", "http://localhost:8084/api/bookings/health" ]
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8084/api/bookings/health" ] # 
       interval: 10s
       timeout: 5s
       retries: 3
     # depends_on:
-    #   booking:
+    #   report:
     #     condition: service_healthy
     networks:
       - micronet
-
+    
   report:
     build: ./report
     container_name: report-svc
@@ -104,26 +101,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-
-    book:
-      build: ../book-api
-      container_name: book-api-svc
-      ports:
-        - "8086:8086"
-      environment:
-        # Use Docker service name for inter-service calls
-        USER_SERVICE_URL: http://student:8081
-      healthcheck:
-        test: [ "CMD", "wget", "-qO-", "http://localhost:8085/api/reports/health"]
-        interval: 10s
-        timeout: 5s
-        retries: 3
-      # depends_on:
-      #   report:
-      #     condition: service_healthy
-      networks:
-        - micronet
-        
+  
   api-gateway:
     image: nginx:alpine
     container_name: gateway
@@ -138,9 +116,11 @@ services:
         condition: service_healthy
       notification:
         condition: service_healthy
-      booking:
+      book:
         condition: service_healthy
       report:
+        condition: service_healthy
+      library-soap-svc:
         condition: service_healthy
     networks:
       - micronet

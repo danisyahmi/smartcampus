@@ -4,7 +4,7 @@ import jakarta.xml.ws.Endpoint;
 
 public class LibraryServer {
     public static void startServer() {
-        String url = "http://localhost:8888/ws/library";
+        String url = "http://0.0.0.0:8888/ws/library";
         System.out.println("=================================================");
         System.out.println("Initializing Legacy Library SOAP Server...");
         System.out.println("Target Endpoint URI: " + url);
