@@ -1,13 +1,13 @@
-package com.smartcampus.order;
+package com.smartcampus.booking;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class OrderApplication {
+public class BookingApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(OrderApplication.class, args);
+		SpringApplication.run(BookingApplication.class, args);
 	}
 
 }

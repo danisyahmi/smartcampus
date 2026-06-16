@@ -17,7 +17,7 @@
 
   <modules>
     <module>enrollment</module>
-    <module>order</module>
+    <module>booking</module>
     <module>notification</module>
     <module>report</module>
     <module>student</module>

@@ -53,21 +53,21 @@ services:
     networks:
       - micronet
 
-  order:
-    build: ./order
-    container_name: order-svc
+  booking:
+    build: ./booking
+    container_name: booking-svc
     ports:
       - "8084:8084"
     environment:
       # Use Docker service name for inter-service calls
       USER_SERVICE_URL: http://student:8081
     healthcheck:
-      test: [ "CMD", "wget", "-qO-", "http://localhost:8084/api/orders/health" ]
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8084/api/bookings/health" ]
       interval: 10s
       timeout: 5s
       retries: 3
     # depends_on:
-    #   order:
+    #   booking:
     #     condition: service_healthy
     networks:
       - micronet
@@ -105,7 +105,7 @@ services:
         condition: service_healthy
       notification:
         condition: service_healthy
-      order:
+      booking:
         condition: service_healthy
       report:
         condition: service_healthy

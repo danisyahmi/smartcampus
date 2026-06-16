@@ -1,16 +1,16 @@
-package com.smartcampus.order.models;
+package com.smartcampus.booking.models;
 
 import lombok.Data;
 
 @Data
-public class Order {
-    private int orderId;
+public class Booking {
+    private int bookingId;
     private int studentId;
     private String item;
     private double price;
 
-    public Order(int orderId, int studentId, String item, double price) {
-        this.orderId = orderId;
+    public Booking(int bookingId, int studentId, String item, double price) {
+        this.bookingId = bookingId;
         this.studentId = studentId;
         this.item = item;
         this.price = price;
