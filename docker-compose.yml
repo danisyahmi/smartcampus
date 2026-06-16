@@ -90,6 +90,20 @@ services:
     #     condition: service_healthy
     networks:
       - micronet
+    
+  library-soap-svc:
+    build: ./library_system
+    container_name: library-soap-svc
+    ports:
+      - "8888:8888"
+    networks:
+      - micronet
+    # Optional healthcheck to verify JAX-WS is up and hosting the WSDL metadata
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8888/ws/library?wsdl" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   api-gateway:
     image: nginx:alpine
