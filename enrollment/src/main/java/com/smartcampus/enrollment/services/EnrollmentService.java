@@ -15,7 +15,7 @@ public class EnrollmentService {
     private int nextId = 100;
 
     // URL of the Student Service
-    private static final String STUDENT_URL = "http://localhost:8081/api/students/";
+    private static final String STUDENT_URL = "http://0.0.0.0:8081/api/students/";
 
     public Enrollment enrol(int studentId, String courseCode, String semester) {
         

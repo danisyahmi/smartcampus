@@ -53,25 +53,22 @@ services:
     networks:
       - micronet
 
-  order:
-    build: ./order
-    container_name: order-svc
+  book:
+    build: ./booking
+    container_name: book-api-svc
     ports:
       - "8084:8084"
-    environment:
-      # Use Docker service name for inter-service calls
-      USER_SERVICE_URL: http://student:8081
     healthcheck:
-      test: [ "CMD", "wget", "-qO-", "http://localhost:8084/api/orders/health" ]
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8084/api/bookings/health" ] # 
       interval: 10s
       timeout: 5s
       retries: 3
     # depends_on:
-    #   order:
+    #   report:
     #     condition: service_healthy
     networks:
       - micronet
-
+    
   report:
     build: ./report
     container_name: report-svc
@@ -90,7 +87,21 @@ services:
     #     condition: service_healthy
     networks:
       - micronet
-
+    
+  library-soap-svc:
+    build: ./library_system
+    container_name: library-soap-svc
+    ports:
+      - "8888:8888"
+    networks:
+      - micronet
+    # Optional healthcheck to verify JAX-WS is up and hosting the WSDL metadata
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8888/ws/library?wsdl" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  
   api-gateway:
     image: nginx:alpine
     container_name: gateway
@@ -105,9 +116,11 @@ services:
         condition: service_healthy
       notification:
         condition: service_healthy
-      order:
+      book:
         condition: service_healthy
       report:
+        condition: service_healthy
+      library-soap-svc:
         condition: service_healthy
     networks:
       - micronet
