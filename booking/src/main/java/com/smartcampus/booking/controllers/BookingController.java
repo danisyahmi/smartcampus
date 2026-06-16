@@ -34,7 +34,7 @@ public class BookingController {
         return ResponseEntity.ok(soapResult); // Returns clean JSON response to client
     }
     
-    // Gateway health endpoint to satisfy your docker-compose layout requirements
+    // Gateway health endpoint 
     @GetMapping("/health")
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("Healthy");
