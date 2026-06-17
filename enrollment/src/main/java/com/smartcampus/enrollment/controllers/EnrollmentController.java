@@ -23,7 +23,7 @@ public class EnrollmentController {
         this.service = s;
     }
 
-    @PostMapping
+    @PostMapping("/")
     public ResponseEntity<?> enrol(@RequestBody Map<String, Object> body) {
         try {
             int studentId = (int) body.get("studentId");
