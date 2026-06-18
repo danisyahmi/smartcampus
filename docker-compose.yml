@@ -102,6 +102,20 @@ services:
       timeout: 5s
       retries: 3
   
+  rabbitmq-server:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-server
+    ports:
+      - "5672:5672"   # AMQP protocol port
+      - "15672:15672" # Management UI port
+    networks:
+      - micronet
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   api-gateway:
     image: nginx:alpine
     container_name: gateway
