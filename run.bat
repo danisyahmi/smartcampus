@@ -2,7 +2,7 @@
 
 if "%~1"=="up" (
     echo Bring containers UP...
-    docker compose up --build -d
+    docker rm -f rabbitmq-server && docker compose up -d
     
     REM Sleep for 5 seconds
     timeout /t 5 /nobreak >nul
