@@ -1,45 +1,59 @@
 package com.smartcampus.student.services;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
 import com.smartcampus.student.models.Student;
+import com.smartcampus.student.repositories.StudentRepository;
 
 @Service
 public class StudentService {
-    // Student List 
-    private final List<Student> students = new ArrayList<>(List.of(
-            new Student(1, "Alice Tan", "alice@utem.edu.my"),
-            new Student(2, "Bob Lim", "bob@utem.edu.my"),
-            new Student(3, "Chloe Wong", "chloe@utem.edu.my")));
-    // Increment ID
-    private int nextId = 4;
+
+    private final StudentRepository studentRepository;
+
+    public StudentService(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
+    }
 
     // List all student
     public List<Student> findAll() {
-        return students;
+        return studentRepository.findAll();
     }
 
     // Find student by id
-    public Optional<Student> findById(int id) {
-        return students.stream()
-                .filter(u -> u.getId() == id)
-                .findFirst();
+    public Optional<Student> findById(Long id) {
+        return studentRepository.findById(id);
     }
 
     // Add new student
-    public Student add(Student s) {
-        s.setId(nextId++);
-        students.add(s);
-        return s;
+    public Student add(Student student) {
+        return studentRepository.save(student);
+    }
+
+    // Update existing student data
+    public Optional<Student> update(Long id, Student updatedStudentData) {
+        return studentRepository.findById(id).map(existingStudentData -> {
+            // update the allowed fields
+            existingStudentData.setFirstName(updatedStudentData.getFirstName());
+            existingStudentData.setLastName(updatedStudentData.getLastName());
+            existingStudentData.setEmail(updatedStudentData.getEmail());
+            existingStudentData.setProgramme(updatedStudentData.getProgramme());
+
+            // save the changes back to MySQL
+            return studentRepository.save(existingStudentData);
+        });
     }
 
     // Signal if student exist
-    public boolean delete(int id) {
-        return students.removeIf(b -> b.getId() == id); // remove success ? return true : false
+    public boolean delete(Long id) {
+        if (studentRepository.existsById(id)) {
+            studentRepository.deleteById(id);
+            return true;
+        } else {
+            return false;
+        }
     }
 
 }
