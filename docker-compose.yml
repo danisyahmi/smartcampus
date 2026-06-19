@@ -7,6 +7,9 @@ services:
     container_name: student-svc
     ports:
       - "8081:8081"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
     networks:
       - micronet
     healthcheck:
@@ -23,14 +26,16 @@ services:
     environment:
       # Use Docker service name for inter-service calls
       USER_SERVICE_URL: http://student:8081
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      rabbitmq-server:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:8082/api/enrollments/health" ]
       interval: 10s
       timeout: 5s
       retries: 3
-    # depends_on:
-    #   enrollment:
-    #     condition: service_healthy
     networks:
       - micronet
 
@@ -42,30 +47,32 @@ services:
     environment:
       # Use Docker service name for inter-service calls
       USER_SERVICE_URL: http://student:8081
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      rabbitmq-server:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:8083/api/notifications/health" ]
       interval: 10s
       timeout: 5s
       retries: 3
-    # depends_on:
-    #   notification:
-    #     condition: service_healthy
     networks:
       - micronet
 
-  book:
+  booking:
     build: ./booking
-    container_name: book-api-svc
+    container_name: booking-api-svc
     ports:
       - "8084:8084"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:8084/api/bookings/health" ] # 
       interval: 10s
       timeout: 5s
       retries: 3
-    # depends_on:
-    #   report:
-    #     condition: service_healthy
     networks:
       - micronet
     
@@ -77,14 +84,14 @@ services:
     environment:
       # Use Docker service name for inter-service calls
       USER_SERVICE_URL: http://student:8081
+    depends_on:
+      mysql-db:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://localhost:8085/api/reports/health"]
       interval: 10s
       timeout: 5s
       retries: 3
-    # depends_on:
-    #   report:
-    #     condition: service_healthy
     networks:
       - micronet
     
@@ -116,6 +123,26 @@ services:
       timeout: 5s
       retries: 3
 
+  mysql-db:
+    image: mysql:latest
+    container_name: microservices-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+    ports:
+      - "3306:3306"
+    volumes:
+      # Maps init script folder to MySQL's initialization hook
+      - ./sqls:/docker-entrypoint-initdb.d
+      # Maps the data folder to persistent named volume
+      - db-data:/var/lib/mysql
+    networks:
+      - micronet
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   api-gateway:
     image: nginx:alpine
     container_name: gateway
@@ -130,7 +157,7 @@ services:
         condition: service_healthy
       notification:
         condition: service_healthy
-      book:
+      booking:
         condition: service_healthy
       report:
         condition: service_healthy
@@ -142,3 +169,6 @@ services:
 networks:
   micronet:
     driver: bridge
+
+volumes:
+  db-data:

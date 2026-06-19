@@ -2,12 +2,7 @@
 
 if "%~1"=="up" (
     echo Bring containers UP...
-    docker rm -f rabbitmq-server && docker compose up -d
-    
-    REM Sleep for 5 seconds
-    timeout /t 5 /nobreak >nul
-    
-    docker compose ps
+    docker compose up -d
 ) else if "%~1"=="down" (
     echo Taking containers DOWN...
     docker compose down

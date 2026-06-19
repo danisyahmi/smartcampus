@@ -2,7 +2,7 @@
 
 if [ "$1" == "up" ]; then
     echo "Bring containers UP..."
-    docker rm -f rabbitmq-server && docker compose up -d
+    docker compose up -d
 elif [ "$1" == "down" ]; then
     echo "Taking containers DOWN..."
     docker compose down
