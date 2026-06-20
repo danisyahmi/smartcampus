@@ -16,9 +16,25 @@ public interface LibraryService {
     );
 
     @WebMethod
+    String returnBook(
+        @WebParam(name = "bookId") String bookId, 
+        @WebParam(name = "studentId") String studentId
+    );
+
+    @WebMethod
     String reserveDiscussionRoom(
         @WebParam(name = "roomId") String roomId, 
         @WebParam(name = "studentId") String studentId,
         @WebParam(name = "bookingDate") String bookingDate
     );
+
+    @WebMethod
+    String cancelRoomReservation(
+        @WebParam(name = "bookingId") String bookingId
+    );
+
+    @WebMethod
+    boolean checkStudentEligibility(
+        @WebParam(name = "studentId") String studentId
+    ) throws LibraryFaultException;
 }
