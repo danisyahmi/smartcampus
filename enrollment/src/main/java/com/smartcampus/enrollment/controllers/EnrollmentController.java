@@ -3,6 +3,7 @@ package com.smartcampus.enrollment.controllers;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,30 +18,46 @@ import com.smartcampus.enrollment.services.EnrollmentService;
 @RestController
 @RequestMapping("/api/enrollments")
 public class EnrollmentController {
-    private final EnrollmentService service;
+    private final EnrollmentService enrollmentService;
 
-    EnrollmentController(EnrollmentService s) {
-        this.service = s;
+    EnrollmentController(EnrollmentService enrollmentService) {
+        this.enrollmentService = enrollmentService;
     }
 
+    // all enrollments
+    @GetMapping("/")
+    public List<Enrollment> getAll() {
+        return enrollmentService.findAll();
+    }
+
+    // process new enrollment request
     @PostMapping("/")
-    public ResponseEntity<?> enrol(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> createEnrollment(@RequestBody Map<String, String> requestBody) {
+        String studentId = requestBody.get("studentId");
+        String courseCode = requestBody.get("courseCode");
+        String semester = requestBody.get("semester");
+
+        // Simple explicit payload field presence verification
+        if (studentId == null || courseCode == null || semester == null ||
+                studentId.isBlank() || courseCode.isBlank() || semester.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing required payload attributes."));
+        }
+
         try {
-            int studentId = (int) body.get("studentId");
-            String courseCode = (String) body.get("courseCode");
-            String semester = (String) body.get("semester");
-            Enrollment e = service.enrol(studentId, courseCode, semester);
-            return ResponseEntity.status(201).body(e);
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", ex.getMessage()));
+            Enrollment result = enrollmentService.enrol(studentId, courseCode, semester);
+            return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }
 
+    // get all enrollments for a specific student
     @GetMapping("/student/{studentId}")
-    public List<Enrollment> getByStudent(
-            @PathVariable int studentId) {
-        return service.getByStudent(studentId);
+    public ResponseEntity<List<Enrollment>> getByStudent(@PathVariable String studentId) {
+        List<Enrollment> list = enrollmentService.getByStudent(studentId);
+        return ResponseEntity.ok(list);
     }
 
     @GetMapping("/health")
