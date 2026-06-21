@@ -3,66 +3,116 @@ package com.smartcampus.booking.services;
 import org.springframework.stereotype.Service;
 import jakarta.xml.soap.*;
 import org.w3c.dom.NodeList;
+
+import com.smartcampus.booking.models.Booking;
+import com.smartcampus.booking.repositories.BookingRepository;
+
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
 public class BookingService {
 
+    private final BookingRepository bookingRepository;
     // Use the Docker container service name and the port defined
     private static final String SOAP_ENDPOINT = "http://library-soap-svc:8888/ws/library";
 
+    public BookingService(BookingRepository bookingRepository) {
+        this.bookingRepository = bookingRepository;
+    }
+
+    // Reserve discussion room
     public Map<String, String> reserveLegacyRoom(String roomId, String studentId, String bookingDate) {
+        return callLegacySoapSystem("reserveDiscussionRoom", Map.of(
+                "roomId", roomId,
+                "studentId", studentId,
+                "bookingDate", bookingDate), roomId, studentId);
+    }
+
+    // Loan book operation
+    public Map<String, String> loanLegacyBook(String bookId, String studentId) {
+        return callLegacySoapSystem("loanBook", Map.of(
+                "bookId", bookId,
+                "studentId", studentId), bookId, studentId);
+    }
+
+    // --- CENTRALIZED REUSABLE SOAP HANDLING ENGINE ---
+    private Map<String, String> callLegacySoapSystem(String operation, Map<String, String> arguments, String resourceId,
+            String studentId) {
         Map<String, String> result = new HashMap<>();
+
+        // Instantiate local audit log entity
+        Booking localBooking = new Booking();
+        localBooking.setStudentId(studentId);
+        localBooking.setResourceId(resourceId);
+        localBooking.setStartTime(LocalDateTime.now());
+
         try {
-            // Create SOAP Message Factory
             MessageFactory messageFactory = MessageFactory.newInstance();
             SOAPMessage soapMessage = messageFactory.createMessage();
-            
-            // Populate SOAP Body to match the exact legacy implementation contract
+
             SOAPPart soapPart = soapMessage.getSOAPPart();
             SOAPEnvelope envelope = soapPart.getEnvelope();
             SOAPBody soapBody = envelope.getBody();
 
-            // Create the operation element matching the method name in LibraryService
-            // Namespace prefix 'ns' pointing to the expected service target namespace
-            Name operationName = envelope.createName("reserveDiscussionRoom", "ns", "http://library_system.com/");
+            // Match target name and contract namespaces exactly
+            Name operationName = envelope.createName(operation, "ns", "http://library_system.com/");
             SOAPBodyElement methodElement = soapBody.addBodyElement(operationName);
 
-            // Add the ordered arguments matching the RPC contract
-            methodElement.addChildElement("roomId").addTextNode(roomId);
-            methodElement.addChildElement("studentId").addTextNode(studentId);
-            methodElement.addChildElement("bookingDate").addTextNode(bookingDate);
+            // Dynamically attach parameters to the XML packet payload
+            for (Map.Entry<String, String> arg : arguments.entrySet()) {
+                methodElement.addChildElement(arg.getKey()).addTextNode(arg.getValue());
+            }
 
             soapMessage.saveChanges();
 
-            // Establish connection and dispatch the message over the network
+            // Establish network connection and dispatch
             SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
             SOAPConnection soapConnection = soapConnectionFactory.createConnection();
-            
+
             SOAPMessage soapResponse = soapConnection.call(soapMessage, SOAP_ENDPOINT);
             soapConnection.close();
 
-            // Parse the raw text response out of the XML nodes
             SOAPBody responseBody = soapResponse.getSOAPBody();
+
+            // Intercept target legacy system SOAP Fault exceptions
+            if (responseBody.hasFault()) {
+                SOAPFault fault = responseBody.getFault();
+                result.put("status", "FAULT");
+                result.put("message", "Legacy System Fault: " + fault.getFaultString());
+
+                localBooking.setStatus("FAILED");
+                bookingRepository.save(localBooking);
+                return result;
+            }
+
+            // Parse output string out of payload document structure
             NodeList returnNodes = responseBody.getElementsByTagName("return");
 
             if (returnNodes.getLength() > 0) {
-                // Legacy system returns formatted string 
                 String rawResponseText = returnNodes.item(0).getTextContent();
                 String[] parts = rawResponseText.split("\\|");
-                
-                result.put("status", parts[0]);
+
+                String status = parts[0];
+                result.put("status", status);
                 result.put("message", parts.length > 1 ? parts[1] : rawResponseText);
+
+                localBooking.setStatus("SUCCESS".equalsIgnoreCase(status) ? "ACTIVE" : "FAILED");
             } else {
                 result.put("status", "ERROR");
-                result.put("message", "Empty response from legacy library backend.");
+                result.put("message", "Empty XML payload response from legacy library backend.");
+                localBooking.setStatus("FAILED");
             }
 
         } catch (Exception e) {
             result.put("status", "ERROR");
             result.put("message", "Failed to communicate with legacy SOAP system: " + e.getMessage());
+            localBooking.setStatus("FAILED");
         }
+
+        // Commit transaction tracking state data to local database before returning
+        bookingRepository.save(localBooking);
         return result;
     }
 }
