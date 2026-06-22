@@ -1,6 +1,7 @@
 package com.smartcampus.enrollment.services;
 
 import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -21,77 +22,78 @@ public class EnrollmentService {
     private final RabbitTemplate rabbitTemplate;
     private final RestTemplate restTemplate;
 
-    // Dynamically injects the network URL from Docker (via Nginx or direct service discovery)
     @Value("${external.student-service.url:http://localhost:8081}")
     private String studentServiceUrl;
 
-    // RabbitMQ Constants from your config
     private static final String EXCHANGE_NAME = "enrollment-exchange";
     private static final String ROUTING_KEY = "enrollment.success";
 
-    public EnrollmentService(EnrollmentRepository enrollmentRepository, 
-                             CourseRepository courseRepository, 
-                             RabbitTemplate rabbitTemplate) {
+    public EnrollmentService(
+            EnrollmentRepository enrollmentRepository,
+            CourseRepository courseRepository,
+            RabbitTemplate rabbitTemplate) {
+
         this.enrollmentRepository = enrollmentRepository;
         this.courseRepository = courseRepository;
         this.rabbitTemplate = rabbitTemplate;
-        this.restTemplate = new RestTemplate(); // Standard runtime instantiation
+        this.restTemplate = new RestTemplate();
     }
 
-    // CREATE: Enrol a student into a course
     public Enrollment enrol(String studentId, String courseCode, String semester) {
-        
-        // 1. Validate student exists by calling Student Profile Service via Nginx/Docker network
-        String validationUrl = studentServiceUrl + "/api/students/matric/" + studentId;
+
+        // 1. Validate student
+        String url = studentServiceUrl + "/api/students/matric/" + studentId;
+
         try {
-            // Requirement R7/R9: Network verification call
-            restTemplate.getForObject(validationUrl, Object.class);
+            restTemplate.getForObject(url, Object.class);
+
         } catch (HttpClientErrorException.NotFound e) {
-            throw new IllegalArgumentException("Validation Failure: Student " + studentId + " does not exist.");
+            throw new IllegalArgumentException("Student " + studentId + " does not exist.");
+
         } catch (Exception e) {
-            throw new IllegalStateException("Student Service is currently unreachable. Graceful degradation triggered.");
+            throw new IllegalStateException("Student service unreachable.");
         }
 
-        // 2. Fetch the target course from the internal catalog database
+        // 2. Get course
         Course course = courseRepository.findByCourseCode(courseCode)
-                .orElseThrow(() -> new IllegalArgumentException("Course code " + courseCode + " not found."));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Course not found: " + courseCode));
 
-        // 3. Requirement R5: Verify class capacity constraint
-        long activeEnrolledCount = enrollmentRepository.countByCourseCourseCodeAndStatus(courseCode, "ENROLLED");
-        if (activeEnrolledCount >= course.getCapacity()) {
-            throw new IllegalStateException("Cannot enroll: Course " + courseCode + " has reached its max capacity of " + course.getCapacity());
+        // 3. Capacity check
+        long count = enrollmentRepository
+                .countByCourseCourseCodeAndStatus(courseCode, "ENROLLED");
+
+        if (count >= course.getCapacity()) {
+            throw new IllegalStateException("Course is full.");
         }
 
-        // 4. Save the permanent record to enrollment_db
+        // 4. Save enrollment
         Enrollment enrollment = new Enrollment();
         enrollment.setStudentId(studentId);
         enrollment.setCourse(course);
         enrollment.setSemester(semester);
         enrollment.setStatus("ENROLLED");
-        
-        Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
 
-        // 5. Requirement R6: Asynchronous Choreography Message Push
+        Enrollment saved = enrollmentRepository.save(enrollment);
+
+        // 5. Send RabbitMQ event
         try {
-            // Creating message payload for Notification service
-            EnrollmentEvent event = new EnrollmentEvent(studentId, courseCode, semester);
-            
-            System.out.println("Enrolment database commit complete! Pushing payload to RabbitMQ...");
+            EnrollmentEvent event =
+                    new EnrollmentEvent(studentId, courseCode, semester);
+
             rabbitTemplate.convertAndSend(EXCHANGE_NAME, ROUTING_KEY, event);
-        } catch (Exception ex) {
-            // Log messaging error cleanly so the actual database mutation doesn't roll back
-            System.err.println("Non-blocking failure: Messaging broker down. Logged: " + ex.getMessage());
+
+        } catch (Exception e) {
+            System.err.println("RabbitMQ failed: " + e.getMessage());
         }
 
-        return savedEnrollment;
+        return saved;
     }
 
-    // READ: Get all enrollments for a specific student
     public List<Enrollment> getByStudent(String studentId) {
         return enrollmentRepository.findByStudentId(studentId);
     }
-    
-    // READ: Get all system enrollments
+
     public List<Enrollment> findAll() {
         return enrollmentRepository.findAll();
     }

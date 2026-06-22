@@ -10,8 +10,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EnrollmentEvent implements Serializable {
+
     private static final long serialVersionUID = 1L;
-    private String studentEmail;
-    private String courseName;
+
+    private String studentId;   // FIXED
+    private String courseCode;  // FIXED
     private String semester;
 }
