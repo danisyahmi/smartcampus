@@ -24,6 +24,15 @@ CREATE TABLE IF NOT EXISTS `courses` (
     `title` VARCHAR(255) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS `enrollments` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `student_id` VARCHAR(255) NOT NULL,
+    `course_id` BIGINT NOT NULL,
+    `semester` VARCHAR(255) NOT NULL,
+    `status` VARCHAR(255) NOT NULL,
+    FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`)
+);
+
 INSERT INTO `courses` (`id`, `course_code`, `title`) VALUES
 (1, 'BITS1223', 'Introduction to Computer Science'),
 (2, 'BITS1233', 'Software Architecture & Microservices'),
@@ -37,12 +46,28 @@ INSERT INTO `enrollments` (`student_id`, `course_id`, `semester`, `status`) VALU
 
 USE `booking_db`;
 
+CREATE TABLE IF NOT EXISTS `bookings` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `student_id` VARCHAR(255) NOT NULL,
+    `resource_id` VARCHAR(255) NOT NULL,
+    `start_time` DATETIME,
+    `status` VARCHAR(255) NOT NULL
+);
+
 INSERT INTO `bookings` (`student_id`, `resource_id`, `start_time`, `status`) VALUES
 ('B032510001', 'A-302', '2026-06-24 09:00:00', 'ACTIVE'),
 ('B032510002', 'ISBN-9783161484100', '2026-06-24 10:30:00', 'ACTIVE'),
 ('B032510003', 'A-205', '2026-06-24 08:15:00', 'FAILED');
 
 USE `notification_db`;
+
+CREATE TABLE IF NOT EXISTS `notifications` (
+    `id` VARCHAR(255) PRIMARY KEY,
+    `type` VARCHAR(255) NOT NULL,
+    `message` VARCHAR(255) NOT NULL,
+    `timestamp` VARCHAR(255) NOT NULL,
+    `is_read` TINYINT(1) NOT NULL DEFAULT 0
+);
 
 INSERT INTO `notifications` (`id`, `type`, `message`, `timestamp`, `is_read`) VALUES
 ('ntf-001', 'BOOKING', 'Your reservation for room A-302 has been confirmed.', '2026-06-24T09:05:00', 0),
