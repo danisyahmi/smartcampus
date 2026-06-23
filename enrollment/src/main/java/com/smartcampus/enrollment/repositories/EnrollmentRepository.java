@@ -12,7 +12,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     List<Enrollment> findByStudentId(String studentId);
 
-    long countByCourseCourseCodeAndStatus(
+    // declare 3 parameters
+    long countByCourseCourseCodeAndSemesterAndStatus(
             String courseCode, String semester, String status);
 }
-

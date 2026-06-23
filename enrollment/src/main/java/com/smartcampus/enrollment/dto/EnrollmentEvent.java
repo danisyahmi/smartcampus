@@ -13,7 +13,7 @@ public class EnrollmentEvent implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private String studentId;   // FIXED
-    private String courseCode;  // FIXED
+    private String studentId;  
+    private String courseCode;  
     private String semester;
 }

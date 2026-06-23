@@ -2,17 +2,20 @@ package com.smartcampus.enrollment.services;
 
 import java.util.List;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
-import com.smartcampus.enrollment.models.Enrollment;
-import com.smartcampus.enrollment.models.Course;
-import com.smartcampus.enrollment.repositories.EnrollmentRepository;
-import com.smartcampus.enrollment.repositories.CourseRepository;
+import com.smartcampus.enrollment.config.RabbitMQConfig;
 import com.smartcampus.enrollment.dto.EnrollmentEvent;
+import com.smartcampus.enrollment.models.Course;
+import com.smartcampus.enrollment.models.Enrollment;
+import com.smartcampus.enrollment.repositories.CourseRepository;
+import com.smartcampus.enrollment.repositories.EnrollmentRepository;
 
 @Service
 public class EnrollmentService {
@@ -21,68 +24,68 @@ public class EnrollmentService {
     private final CourseRepository courseRepository;
     private final RabbitTemplate rabbitTemplate;
     private final RestTemplate restTemplate;
+    private final TransactionTemplate transactionTemplate;
 
     @Value("${external.student-service.url:http://localhost:8081}")
     private String studentServiceUrl;
 
-    private static final String EXCHANGE_NAME = "enrollment-exchange";
-    private static final String ROUTING_KEY = "enrollment.success";
-
+    
     public EnrollmentService(
             EnrollmentRepository enrollmentRepository,
             CourseRepository courseRepository,
-            RabbitTemplate rabbitTemplate) {
+            RabbitTemplate rabbitTemplate,
+            PlatformTransactionManager transactionManager) {
 
         this.enrollmentRepository = enrollmentRepository;
         this.courseRepository = courseRepository;
         this.rabbitTemplate = rabbitTemplate;
         this.restTemplate = new RestTemplate();
+        
+        // concurrency part
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
     public Enrollment enrol(String studentId, String courseCode, String semester) {
 
-        // 1. Validate student
+        // student validation
         String url = studentServiceUrl + "/api/students/matric/" + studentId;
-
         try {
             restTemplate.getForObject(url, Object.class);
-
         } catch (HttpClientErrorException.NotFound e) {
             throw new IllegalArgumentException("Student " + studentId + " does not exist.");
-
         } catch (Exception e) {
             throw new IllegalStateException("Student service unreachable.");
         }
 
-        // 2. Get course
-        Course course = courseRepository.findByCourseCode(courseCode)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("Course not found: " + courseCode));
+        // only one thread can modify same course safely
+        Enrollment saved = transactionTemplate.execute(status -> {
 
-        // 3. Capacity check
-        long count = enrollmentRepository
-                .countByCourseCourseCodeAndStatus(courseCode, "ENROLLED");
+            Course course = courseRepository.findByCourseCodeForUpdate(courseCode)
+                    .orElseThrow(() ->
+                            new IllegalArgumentException("Course not found: " + courseCode));
 
-        if (count >= course.getCapacity()) {
-            throw new IllegalStateException("Course is full.");
-        }
+            long count = enrollmentRepository
+                    .countByCourseCourseCodeAndSemesterAndStatus(courseCode, semester, "ENROLLED");
 
-        // 4. Save enrollment
-        Enrollment enrollment = new Enrollment();
-        enrollment.setStudentId(studentId);
-        enrollment.setCourse(course);
-        enrollment.setSemester(semester);
-        enrollment.setStatus("ENROLLED");
+            if (count >= course.getCapacity()) {
+                throw new IllegalStateException("Course is full.");
+            }
 
-        Enrollment saved = enrollmentRepository.save(enrollment);
+            Enrollment enrollment = new Enrollment();
+            enrollment.setStudentId(studentId);
+            enrollment.setCourse(course);
+            enrollment.setSemester(semester);
+            enrollment.setStatus("ENROLLED");
 
-        // 5. Send RabbitMQ event
+            return enrollmentRepository.save(enrollment);
+        });
+
         try {
-            EnrollmentEvent event =
-                    new EnrollmentEvent(studentId, courseCode, semester);
-
-            rabbitTemplate.convertAndSend(EXCHANGE_NAME, ROUTING_KEY, event);
-
+            EnrollmentEvent event = new EnrollmentEvent(studentId, courseCode, semester);
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.EXCHANGE_NAME,
+                    RabbitMQConfig.ROUTING_KEY,
+                    event);
         } catch (Exception e) {
             System.err.println("RabbitMQ failed: " + e.getMessage());
         }
