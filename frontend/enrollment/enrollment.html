@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCampus - Enrollment Management</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+        .header-actions {
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .back-link {
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 500;
+        }
+        .back-link:hover { color: #1e293b; }
+        
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+        }
+        
+        .panel {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+        .panel h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: #1e293b;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 8px;
+        }
+
+        /* Form Controls */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #475569;
+        }
+        .form-group input {
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        .btn {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            width: 100%;
+            font-size: 0.95rem;
+        }
+        .btn:hover { background-color: #1d4ed8; }
+        .btn-success { background-color: #10b981; }
+        .btn-success:hover { background-color: #059669; }
+
+        /* Results Display */
+        .search-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .search-bar input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+        .search-bar .btn { width: auto; white-space: nowrap; }
+
+        .enrollment-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+        }
+        .enrollment-item p { margin: 4px 0; font-size: 0.95rem;}
+        .badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        .error-msg { color: #ef4444; font-size: 0.9rem; margin-top: 8px; display: none; }
+        .success-msg { color: #10b981; font-size: 0.9rem; margin-top: 8px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="header-actions">
+        <a href="/index.html" class="back-link">← Back to Dashboard</a>
+        <h1 style="margin: 8px 0 0 0;">📝 Enrollment Management</h1>
+    </div>
+
+    <div class="grid-layout">
+        
+        <div class="panel">
+            <h3>New Course Enrollment</h3>
+            <form id="enrollForm" onsubmit="submitEnrollment(event)">
+                <div class="form-group">
+                    <label for="studentId">Student Database ID (Integer)</label>
+                    <input type="number" id="studentId" required placeholder="e.g. 1">
+                </div>
+                <div class="form-group">
+                    <label for="courseCode">Course Code</label>
+                    <input type="text" id="courseCode" required placeholder="e.g. CS101">
+                </div>
+                <div class="form-group">
+                    <label for="semester">Semester</label>
+                    <input type="text" id="semester" required placeholder="e.g. Fall 2026">
+                </div>
+                <button type="submit" class="btn btn-success">Confirm Enrollment</button>
+                <div id="formError" class="error-msg"></div>
+                <div id="formSuccess" class="success-msg">Successfully enrolled!</div>
+            </form>
+        </div>
+
+        <div class="panel">
+            <h3>Lookup Student Schedule</h3>
+            <div class="search-bar">
+                <input type="number" id="searchStudentId" placeholder="Enter Student Database ID...">
+                <button class="btn" onclick="lookupEnrollments()">Search</button>
+            </div>
+            
+            <div id="enrollmentResults">
+                <p style="color: #64748b; text-align: center; margin-top: 20px;">Enter an ID above to display active course units.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Set context URL to your Nginx Router mapping
+        const API_BASE_URL = 'http://localhost/api/enrollments';
+
+        // Method handles @PostMapping("/")
+        async function submitEnrollment(event) {
+            event.preventDefault();
+            
+            const errorDiv = document.getElementById('formError');
+            const successDiv = document.getElementById('formSuccess');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            const payload = {
+                studentId: parseInt(document.getElementById('studentId').value),
+                courseCode: document.getElementById('courseCode').value,
+                semester: document.getElementById('semester').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Server rejected request arguments.');
+                }
+
+                successDiv.style.display = 'block';
+                document.getElementById('enrollForm').reset();
+                
+                // If searching for the same student context, refresh right grid
+                if(payload.studentId === parseInt(document.getElementById('searchStudentId').value)) {
+                    lookupEnrollments();
+                }
+
+            } catch (error) {
+                errorDiv.innerText = error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Method handles @GetMapping("/student/{studentId}")
+        async function lookupEnrollments() {
+            const searchId = document.getElementById('searchStudentId').value;
+            const resultsContainer = document.getElementById('enrollmentResults');
+            
+            if(!searchId) {
+                alert('Please provide a valid database reference key.');
+                return;
+            }
+
+            resultsContainer.innerHTML = '<p style="color: #64748b; text-align: center;">Fetching schedule profiles...</p>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/student/${searchId}`);
+                if(!response.ok) throw new Error('Data set mismatch error.');
+
+                const schedules = await response.json();
+                resultsContainer.innerHTML = '';
+
+                if(schedules.length === 0) {
+                    resultsContainer.innerHTML = '<p style="color: #64748b; text-align: center; margin-top: 20px;">No course modules found for this reference.</p>';
+                    return;
+                }
+
+                schedules.forEach(item => {
+                    resultsContainer.innerHTML += `
+                        <div class="enrollment-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong>📚 ${item.courseCode || 'Unassigned Unit'}</strong>
+                                <span class="badge">${item.semester || 'N/A'}</span>
+                            </div>
+                            <p style="color: #64748b; font-size: 0.85rem; margin-top: 6px;">Ref Token Hash: ID-${item.id || 'NEW'}</p>
+                        </div>
+                    `;
+                });
+
+            } catch (error) {
+                resultsContainer.innerHTML = '<p style="color: #ef4444; text-align: center;">Gateway endpoint unreachable.</p>';
+            }
+        }
+    </script>
+</body>
+</html>
