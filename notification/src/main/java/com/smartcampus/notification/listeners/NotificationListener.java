@@ -19,6 +19,6 @@ public class NotificationListener {
         System.out.println("Received message from broker for student: " + event.getStudentEmail());
 
         // pass the data down to core business logic service to send an message
-        notificationService.sendNotification(event.getStudentEmail(), "Enrolled into " + event.getCourseName());
+        notificationService.sendNotification("ENROLLMENT", "Enrolled into " + event.getCourseName(), event.getStudentEmail());
     }
 }

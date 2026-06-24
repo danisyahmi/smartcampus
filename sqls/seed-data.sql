@@ -66,9 +66,10 @@ CREATE TABLE IF NOT EXISTS `notifications` (
     `type` VARCHAR(255) NOT NULL,
     `message` VARCHAR(255) NOT NULL,
     `timestamp` VARCHAR(255) NOT NULL,
-    `is_read` TINYINT(1) NOT NULL DEFAULT 0
+    `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+    `matric_no` VARCHAR(255)
 );
 
-INSERT INTO `notifications` (`id`, `type`, `message`, `timestamp`, `is_read`) VALUES
-('ntf-001', 'BOOKING', 'Your reservation for room A-302 has been confirmed.', '2026-06-24T09:05:00', 0),
-('ntf-002', 'ENROLLMENT', 'Successfully registered for course SE212.', '2026-06-24T09:15:00', 1);
+INSERT INTO `notifications` (`id`, `type`, `message`, `timestamp`, `is_read`, `matric_no`) VALUES
+('ntf-001', 'BOOKING', 'Your reservation for room A-302 has been confirmed.', '2026-06-24T09:05:00', 0, 'B032510001'),
+('ntf-002', 'ENROLLMENT', 'Successfully registered for course SE212.', '2026-06-24T09:15:00', 1, 'B032510002');

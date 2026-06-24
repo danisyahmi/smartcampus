@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCampus - Notification Log</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+
+        /* ── Header ── */
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-bottom: 24px;
+        }
+        .back-link {
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 500;
+        }
+        .back-link:hover { color: #1e293b; }
+
+        /* ── Buttons ── */
+        .btn {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .btn:hover { background-color: #1d4ed8; }
+        .btn-secondary {
+            background-color: #64748b;
+        }
+        .btn-secondary:hover { background-color: #475569; }
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 0.8rem;
+        }
+
+        /* ── Controls bar ── */
+        .controls-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+        .controls-bar select,
+        .controls-bar input[type="text"] {
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: white;
+            color: #334155;
+        }
+        .controls-bar select:focus,
+        .controls-bar input[type="text"]:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        .spacer { flex: 1; }
+
+
+        /* ── Stats row ── */
+        .stats-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-pill {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            color: #64748b;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        .stat-pill strong {
+            color: #1e293b;
+            font-size: 1rem;
+        }
+
+        /* ── Log table ── */
+        .log-wrapper {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 11px 14px;
+            text-align: left;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+        }
+        th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr.unread { background-color: #eff6ff; }
+        tr.unread:hover { background-color: #dbeafe; }
+        tr.read { opacity: 0.75; }
+        tr.read:hover { background-color: #f8fafc; opacity: 1; }
+
+        /* ── Type badges ── */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .badge-enrollment  { background: #dbeafe; color: #1d4ed8; }
+        .badge-booking     { background: #d1fae5; color: #065f46; }
+        .badge-library     { background: #fef3c7; color: #92400e; }
+        .badge-payment     { background: #fce7f3; color: #9d174d; }
+        .badge-system      { background: #f3f4f6; color: #374151; }
+        .badge-default     { background: #e0e7ff; color: #3730a3; }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .dot-unread { background: #3b82f6; }
+        .dot-read   { background: #cbd5e1; }
+
+        .ts { font-size: 0.82rem; color: #94a3b8; white-space: nowrap; }
+        .msg { font-size: 0.92rem; }
+
+
+
+        /* ── Empty / error state ── */
+        .state-row td {
+            text-align: center;
+            padding: 40px 20px;
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+        .state-row.error td { color: #ef4444; }
+    </style>
+</head>
+<body>
+
+    <div class="header-actions">
+        <div>
+            <a href="/index.html" class="back-link">← Back to Dashboard</a>
+            <h1 style="margin: 8px 0 0 0;">🔔 Notification Log</h1>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button class="btn" onclick="fetchNotifications()">↻ Refresh</button>
+        </div>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="stats-row" id="statsRow">
+        <div class="stat-pill">Total <strong id="statTotal">–</strong></div>
+        <div class="stat-pill">Unread <strong id="statUnread">–</strong></div>
+        <div class="stat-pill">Read <strong id="statRead">–</strong></div>
+    </div>
+
+    <!-- Controls bar -->
+    <div class="controls-bar">
+        <input type="text" id="searchInput" placeholder="Search messages…" oninput="applyFilters()" style="min-width:180px;">
+
+        <select id="filterType" onchange="applyFilters()">
+            <option value="">All types</option>
+            <option value="ENROLLMENT">Enrollment</option>
+            <option value="BOOKING">Booking</option>
+            <option value="LIBRARY">Library</option>
+            <option value="PAYMENT">Payment</option>
+        </select>
+
+        <select id="filterStatus" onchange="applyFilters()">
+            <option value="">All statuses</option>
+            <option value="unread">Unread only</option>
+            <option value="read">Read only</option>
+        </select>
+
+        <div class="spacer"></div>
+    </div>
+
+    <!-- Log table -->
+    <div class="log-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:32px;"></th>
+                    <th>Matric No</th>
+                    <th>Type</th>
+                    <th>Message</th>
+                    <th>Timestamp</th>
+                    <th style="width:90px;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="notificationTableBody">
+                <tr class="state-row">
+                    <td colspan="6">Loading notifications…</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost/api/notifications';
+
+        // All raw notifications fetched from the backend
+        let allNotifications = [];
+
+        // ── Fetch all notifications ──────────────────────────────────────
+        async function fetchNotifications() {
+            try {
+                const response = await fetch(API_BASE);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                allNotifications = await response.json();
+                updateStats();
+                applyFilters();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('notificationTableBody').innerHTML =
+                    `<tr class="state-row error"><td colspan="6">Cannot connect to notification service. Is it running on port 8083?</td></tr>`;
+            }
+        }
+
+        // ── Update summary stats ─────────────────────────────────────────
+        function updateStats() {
+            const total  = allNotifications.length;
+            const unread = allNotifications.filter(n => !n.read).length;
+            document.getElementById('statTotal').textContent  = total;
+            document.getElementById('statUnread').textContent = unread;
+            document.getElementById('statRead').textContent   = total - unread;
+        }
+
+        // ── Filter + render ──────────────────────────────────────────────
+        function applyFilters() {
+            const typeFilter   = document.getElementById('filterType').value.toUpperCase();
+            const statusFilter = document.getElementById('filterStatus').value;
+            const searchTerm   = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            let filtered = allNotifications.filter(n => {
+                const matchType   = !typeFilter   || (n.type || '').toUpperCase() === typeFilter;
+                const matchStatus = !statusFilter || (statusFilter === 'unread' ? !n.read : n.read);
+                const matchSearch = !searchTerm   ||
+                    (n.message  || '').toLowerCase().includes(searchTerm) ||
+                    (n.type     || '').toLowerCase().includes(searchTerm);
+                return matchType && matchStatus && matchSearch;
+            });
+
+            // Newest first
+            filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            renderTable(filtered);
+        }
+
+        // ── Render the table ─────────────────────────────────────────────
+        function renderTable(notifications) {
+            const tbody = document.getElementById('notificationTableBody');
+
+            if (notifications.length === 0) {
+                tbody.innerHTML = `<tr class="state-row"><td colspan="6">No notifications match the current filters.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = notifications.map(n => {
+                const typeKey  = (n.type || 'default').toLowerCase();
+                const badgeClass = {
+                    enrollment: 'badge-enrollment',
+                    booking:    'badge-booking',
+                    library:    'badge-library',
+                    payment:    'badge-payment',
+                    system:     'badge-system',
+                }[typeKey] || 'badge-default';
+
+                const rowClass  = n.read ? 'read' : 'unread';
+                const dotClass  = n.read ? 'dot-read' : 'dot-unread';
+                const btnLabel  = n.read ? 'Read' : 'Mark read';
+                const btnStyle  = n.read
+                    ? 'opacity:0.4; cursor:default;'
+                    : '';
+                const btnDisabled = n.read ? 'disabled' : '';
+
+                // Format timestamp nicely if parseable
+                let tsDisplay = n.timestamp || '—';
+                try {
+                    const d = new Date(n.timestamp);
+                    if (!isNaN(d)) {
+                        tsDisplay = d.toLocaleDateString('en-MY', { day:'2-digit', month:'short', year:'numeric' })
+                            + ' ' + d.toLocaleTimeString('en-MY', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+                    }
+                } catch (_) {}
+
+                return `
+                    <tr class="${rowClass}" id="row-${n.id}">
+                        <td><span class="status-dot ${dotClass}"></span></td>
+                        <td class="msg">${escapeHtml(n.matricNo || '—')}</td>
+                        <td><span class="badge ${badgeClass}">${(n.type || 'N/A').toUpperCase()}</span></td>
+                        <td class="msg">${escapeHtml(n.message || '—')}</td>
+                        <td class="ts">${tsDisplay}</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary"
+                                    style="${btnStyle}"
+                                    ${btnDisabled}
+                                    onclick="markAsRead('${n.id}')">
+                                ${btnLabel}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ── Mark a single notification as read ───────────────────────────
+        async function markAsRead(id) {
+            try {
+                const response = await fetch(`${API_BASE}/${id}/read`, { method: 'PATCH' });
+                if (response.ok || response.status === 204) {
+                    // Update local state so re-render is instant, then re-fetch for accuracy
+                    const n = allNotifications.find(n => n.id === id);
+                    if (n) n.read = true;
+                    updateStats();
+                    applyFilters();
+                    // Background sync
+                    fetchNotifications();
+                } else {
+                    alert('Could not mark notification as read. Status: ' + response.status);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Connection error. Verify the notification service is running.');
+            }
+        }
+
+        // ── Utility: HTML escape ──────────────────────────────────────
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        // ── Boot ──────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', fetchNotifications);
+    </script>
+
+</body>
+</html>

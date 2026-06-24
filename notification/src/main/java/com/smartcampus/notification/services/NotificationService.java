@@ -17,7 +17,7 @@ public class NotificationService {
     @Autowired
     private NotificationRepository repository;
 
-    public Notification sendNotification(String type, String message) {
+    public Notification sendNotification(String type, String message, String matricNo) {
         if (type == null || type.isBlank() || message == null || message.isBlank()) {
             return null;
         }
@@ -25,7 +25,8 @@ public class NotificationService {
             UUID.randomUUID().toString(),
             type,
             message,
-            LocalDateTime.now().toString()
+            LocalDateTime.now().toString(),
+            matricNo
         );
         return repository.save(n);
     }
