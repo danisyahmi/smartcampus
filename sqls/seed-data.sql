@@ -21,7 +21,9 @@ USE `enrollment_db`;
 CREATE TABLE IF NOT EXISTS `courses` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `course_code` VARCHAR(50) NOT NULL UNIQUE,
-    `title` VARCHAR(255) NOT NULL
+    `title` VARCHAR(255) NOT NULL,
+    `credits` INT NOT NULL,
+    `capacity` INT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS `enrollments` (
@@ -33,10 +35,10 @@ CREATE TABLE IF NOT EXISTS `enrollments` (
     FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`)
 );
 
-INSERT INTO `courses` (`id`, `course_code`, `title`) VALUES
-(1, 'BITS1223', 'Introduction to Computer Science'),
-(2, 'BITS1233', 'Software Architecture & Microservices'),
-(3, 'BITS1112', 'Programming Techniques')
+INSERT INTO `courses` (`id`, `course_code`, `title`, `credits`, `capacity`) VALUES
+(1, 'BITS1223', 'Introduction to Computer Science', 3, 40),
+(2, 'BITS1233', 'Software Architecture & Microservices', 3, 35),
+(3, 'BITS1112', 'Programming Techniques', 3, 40)
 ON DUPLICATE KEY UPDATE `course_code` = VALUES(`course_code`);
 
 INSERT INTO `enrollments` (`student_id`, `course_id`, `semester`, `status`) VALUES

@@ -15,7 +15,6 @@
             color: #334155;
         }
 
-        /* ── Header ── */
         .header-actions {
             display: flex;
             justify-content: space-between;
@@ -31,7 +30,6 @@
         }
         .back-link:hover { color: #1e293b; }
 
-        /* ── Buttons ── */
         .btn {
             background-color: #2563eb;
             color: white;
@@ -52,7 +50,6 @@
             font-size: 0.8rem;
         }
 
-        /* ── Controls bar ── */
         .controls-bar {
             display: flex;
             flex-wrap: wrap;
@@ -77,7 +74,6 @@
         .spacer { flex: 1; }
 
 
-        /* ── Stats row ── */
         .stats-row {
             display: flex;
             gap: 12px;
@@ -98,7 +94,6 @@
             font-size: 1rem;
         }
 
-        /* ── Log table ── */
         .log-wrapper {
             background: white;
             border-radius: 8px;
@@ -131,7 +126,6 @@
         tr.read { opacity: 0.75; }
         tr.read:hover { background-color: #f8fafc; opacity: 1; }
 
-        /* ── Type badges ── */
         .badge {
             display: inline-block;
             padding: 2px 8px;
@@ -160,9 +154,6 @@
         .ts { font-size: 0.82rem; color: #94a3b8; white-space: nowrap; }
         .msg { font-size: 0.92rem; }
 
-
-
-        /* ── Empty / error state ── */
         .state-row td {
             text-align: center;
             padding: 40px 20px;
@@ -236,10 +227,8 @@
     <script>
         const API_BASE = 'http://localhost/api/notifications';
 
-        // All raw notifications fetched from the backend
         let allNotifications = [];
 
-        // ── Fetch all notifications ──────────────────────────────────────
         async function fetchNotifications() {
             try {
                 const response = await fetch(API_BASE);
@@ -250,11 +239,10 @@
             } catch (err) {
                 console.error(err);
                 document.getElementById('notificationTableBody').innerHTML =
-                    `<tr class="state-row error"><td colspan="6">Cannot connect to notification service. Is it running on port 8083?</td></tr>`;
+                    `<tr class="state-row error"><td colspan="6">Cannot connect to notification service.</td></tr>`;
             }
         }
 
-        // ── Update summary stats ─────────────────────────────────────────
         function updateStats() {
             const total  = allNotifications.length;
             const unread = allNotifications.filter(n => !n.read).length;
@@ -263,7 +251,6 @@
             document.getElementById('statRead').textContent   = total - unread;
         }
 
-        // ── Filter + render ──────────────────────────────────────────────
         function applyFilters() {
             const typeFilter   = document.getElementById('filterType').value.toUpperCase();
             const statusFilter = document.getElementById('filterStatus').value;
@@ -278,13 +265,11 @@
                 return matchType && matchStatus && matchSearch;
             });
 
-            // Newest first
             filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             renderTable(filtered);
         }
 
-        // ── Render the table ─────────────────────────────────────────────
         function renderTable(notifications) {
             const tbody = document.getElementById('notificationTableBody');
 
@@ -311,7 +296,6 @@
                     : '';
                 const btnDisabled = n.read ? 'disabled' : '';
 
-                // Format timestamp nicely if parseable
                 let tsDisplay = n.timestamp || '—';
                 try {
                     const d = new Date(n.timestamp);
@@ -341,17 +325,14 @@
             }).join('');
         }
 
-        // ── Mark a single notification as read ───────────────────────────
         async function markAsRead(id) {
             try {
                 const response = await fetch(`${API_BASE}/${id}/read`, { method: 'PATCH' });
                 if (response.ok || response.status === 204) {
-                    // Update local state so re-render is instant, then re-fetch for accuracy
                     const n = allNotifications.find(n => n.id === id);
                     if (n) n.read = true;
                     updateStats();
                     applyFilters();
-                    // Background sync
                     fetchNotifications();
                 } else {
                     alert('Could not mark notification as read. Status: ' + response.status);
@@ -362,7 +343,6 @@
             }
         }
 
-        // ── Utility: HTML escape ──────────────────────────────────────
         function escapeHtml(str) {
             return str
                 .replace(/&/g, '&amp;')
@@ -371,7 +351,6 @@
                 .replace(/"/g, '&quot;');
         }
 
-        // ── Boot ──────────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', fetchNotifications);
     </script>
 

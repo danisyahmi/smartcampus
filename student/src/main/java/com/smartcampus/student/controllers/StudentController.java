@@ -39,6 +39,13 @@ public class StudentController {
     public ResponseEntity<Student> getStudent(@PathVariable Long id) {
         return service.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
+    
+    @GetMapping("/matric/{studentId}")
+    public ResponseEntity<Student> getByStudentId(@PathVariable String studentId) {
+        return service.findByStudentId(studentId)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
 
     // Add new student
     @PostMapping("/")

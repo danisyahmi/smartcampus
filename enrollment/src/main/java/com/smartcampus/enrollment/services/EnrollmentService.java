@@ -26,8 +26,8 @@ public class EnrollmentService {
     private String studentServiceUrl;
 
     // RabbitMQ Constants from your config
-    private static final String EXCHANGE_NAME = "enrollment-exchange";
-    private static final String ROUTING_KEY = "enrollment.success";
+    private static final String EXCHANGE_NAME = "notification.exchange";
+    private static final String ROUTING_KEY = "routing.enrolment";
 
     public EnrollmentService(EnrollmentRepository enrollmentRepository, 
                              CourseRepository courseRepository, 
@@ -74,7 +74,7 @@ public class EnrollmentService {
         // Asynchronous choreography message push
         try {
             // Creating message payload for Notification service
-            EnrollmentEvent event = new EnrollmentEvent(studentId, courseCode, semester);
+        	EnrollmentEvent event = new EnrollmentEvent(studentId, course.getTitle(), semester);
             
             System.out.println("Enrolment database commit complete! Pushing payload to RabbitMQ...");
             rabbitTemplate.convertAndSend(EXCHANGE_NAME, ROUTING_KEY, event);
