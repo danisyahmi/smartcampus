@@ -21,7 +21,7 @@ public class EnrollmentService {
     private final RabbitTemplate rabbitTemplate;
     private final RestTemplate restTemplate;
 
-    // Dynamically injects the network URL from Docker (via Nginx or direct service discovery)
+    // Dynamically injects the network URL from Docker 
     @Value("${external.student-service.url:http://localhost:8081}")
     private String studentServiceUrl;
 
@@ -38,10 +38,10 @@ public class EnrollmentService {
         this.restTemplate = new RestTemplate(); // Standard runtime instantiation
     }
 
-    // CREATE: Enrol a student into a course
+    // Enrol a student into a course
     public Enrollment enrol(String studentId, String courseCode, String semester) {
         
-        // 1. Validate student exists by calling Student Profile Service via Nginx/Docker network
+        // Validate student exists by calling student profile service via Nginx
         String validationUrl = studentServiceUrl + "/api/students/matric/" + studentId;
         try {
             // Requirement R7/R9: Network verification call
@@ -52,17 +52,17 @@ public class EnrollmentService {
             throw new IllegalStateException("Student Service is currently unreachable. Graceful degradation triggered.");
         }
 
-        // 2. Fetch the target course from the internal catalog database
+        // Fetch the target course from the internal catalog database
         Course course = courseRepository.findByCourseCode(courseCode)
                 .orElseThrow(() -> new IllegalArgumentException("Course code " + courseCode + " not found."));
 
-        // 3. Requirement R5: Verify class capacity constraint
+        // Verify class capacity constraint
         long activeEnrolledCount = enrollmentRepository.countByCourseCourseCodeAndStatus(courseCode, "ENROLLED");
         if (activeEnrolledCount >= course.getCapacity()) {
             throw new IllegalStateException("Cannot enroll: Course " + courseCode + " has reached its max capacity of " + course.getCapacity());
         }
 
-        // 4. Save the permanent record to enrollment_db
+        // Save the permanent record to enrollment_db
         Enrollment enrollment = new Enrollment();
         enrollment.setStudentId(studentId);
         enrollment.setCourse(course);
@@ -71,7 +71,7 @@ public class EnrollmentService {
         
         Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
 
-        // 5. Requirement R6: Asynchronous Choreography Message Push
+        // Asynchronous choreography message push
         try {
             // Creating message payload for Notification service
             EnrollmentEvent event = new EnrollmentEvent(studentId, courseCode, semester);
@@ -86,12 +86,12 @@ public class EnrollmentService {
         return savedEnrollment;
     }
 
-    // READ: Get all enrollments for a specific student
+    // Get all enrollments for a specific student
     public List<Enrollment> getByStudent(String studentId) {
         return enrollmentRepository.findByStudentId(studentId);
     }
     
-    // READ: Get all system enrollments
+    // Get all system enrollments
     public List<Enrollment> findAll() {
         return enrollmentRepository.findAll();
     }
