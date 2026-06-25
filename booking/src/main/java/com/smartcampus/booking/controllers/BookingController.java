@@ -1,9 +1,12 @@
 package com.smartcampus.booking.controllers;
 
+import com.smartcampus.booking.models.Booking;
 import com.smartcampus.booking.services.BookingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 import java.util.Map;
 
 @CrossOrigin(origins = "http://localhost:3000")
@@ -15,6 +18,13 @@ public class BookingController {
     public BookingController(BookingService bookingService) {
         this.bookingService = bookingService;
     };
+
+    @GetMapping
+    public ResponseEntity<List<Booking>> getAllBookings() {
+        // Fetch all elements from your database using your service layer
+        List<Booking> bookings = bookingService.getAllBookingsList();
+        return ResponseEntity.ok(bookings);
+    }
 
     @PostMapping("/reserve")
     public ResponseEntity<Map<String, String>> reserveRoom(@RequestBody Map<String, String> payload) {
