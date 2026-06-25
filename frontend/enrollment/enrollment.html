@@ -111,6 +111,11 @@
             border-radius: 4px;
             font-size: 0.8rem;
         }
+        .badge-status {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-size: 0.75rem;
+        }
         .error-msg { color: #ef4444; font-size: 0.9rem; margin-top: 8px; display: none; }
         .success-msg { color: #10b981; font-size: 0.9rem; margin-top: 8px; display: none; }
     </style>
@@ -128,16 +133,16 @@
             <h3>New Course Enrollment</h3>
             <form id="enrollForm" onsubmit="submitEnrollment(event)">
                 <div class="form-group">
-                    <label for="studentId">Student Database ID (Integer)</label>
-                    <input type="number" id="studentId" required placeholder="e.g. 1">
+                    <label for="studentId">Student ID (Matric Number)</label>
+                    <input type="text" id="studentId" required placeholder="e.g. B032510001">
                 </div>
                 <div class="form-group">
                     <label for="courseCode">Course Code</label>
-                    <input type="text" id="courseCode" required placeholder="e.g. CS101">
+                    <input type="text" id="courseCode" required placeholder="e.g. BITS1223">
                 </div>
                 <div class="form-group">
                     <label for="semester">Semester</label>
-                    <input type="text" id="semester" required placeholder="e.g. Fall 2026">
+                    <input type="text" id="semester" required placeholder="e.g. 2025/2026">
                 </div>
                 <button type="submit" class="btn btn-success">Confirm Enrollment</button>
                 <div id="formError" class="error-msg"></div>
@@ -148,7 +153,7 @@
         <div class="panel">
             <h3>Lookup Student Schedule</h3>
             <div class="search-bar">
-                <input type="number" id="searchStudentId" placeholder="Enter Student Database ID...">
+                <input type="text" id="searchStudentId" placeholder="Enter Student ID (e.g. B032510001)...">
                 <button class="btn" onclick="lookupEnrollments()">Search</button>
             </div>
             
@@ -160,10 +165,8 @@
     </div>
 
     <script>
-        // Set context URL to your Nginx Router mapping
         const API_BASE_URL = 'http://localhost/api/enrollments';
 
-        // Method handles @PostMapping("/")
         async function submitEnrollment(event) {
             event.preventDefault();
             
@@ -173,10 +176,11 @@
             errorDiv.style.display = 'none';
             successDiv.style.display = 'none';
 
+            // 🔥 CHANGED: studentId left as String, no longer using parseInt()
             const payload = {
-                studentId: parseInt(document.getElementById('studentId').value),
-                courseCode: document.getElementById('courseCode').value,
-                semester: document.getElementById('semester').value
+                studentId: document.getElementById('studentId').value.trim(),
+                courseCode: document.getElementById('courseCode').value.trim(),
+                semester: document.getElementById('semester').value.trim()
             };
 
             try {
@@ -186,17 +190,15 @@
                     body: JSON.stringify(payload)
                 });
 
-                const data = await response.json();
-
                 if (!response.ok) {
+                    const data = await response.json();
                     throw new Error(data.error || 'Server rejected request arguments.');
                 }
 
                 successDiv.style.display = 'block';
                 document.getElementById('enrollForm').reset();
                 
-                // If searching for the same student context, refresh right grid
-                if(payload.studentId === parseInt(document.getElementById('searchStudentId').value)) {
+                if(payload.studentId === document.getElementById('searchStudentId').value.trim()) {
                     lookupEnrollments();
                 }
 
@@ -206,13 +208,12 @@
             }
         }
 
-        // Method handles @GetMapping("/student/{studentId}")
         async function lookupEnrollments() {
-            const searchId = document.getElementById('searchStudentId').value;
+            const searchId = document.getElementById('searchStudentId').value.trim();
             const resultsContainer = document.getElementById('enrollmentResults');
             
             if(!searchId) {
-                alert('Please provide a valid database reference key.');
+                alert('Please provide a valid student code identification marker.');
                 return;
             }
 
@@ -231,13 +232,20 @@
                 }
 
                 schedules.forEach(item => {
+                    const courseCode = item.course ? item.course.courseCode : 'Unassigned Unit';
+                    const courseTitle = item.course ? item.course.title : 'No Title Available';
+                    
                     resultsContainer.innerHTML += `
                         <div class="enrollment-item">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <strong>📚 ${item.courseCode || 'Unassigned Unit'}</strong>
+                                <strong>📚 ${courseCode}</strong>
                                 <span class="badge">${item.semester || 'N/A'}</span>
                             </div>
-                            <p style="color: #64748b; font-size: 0.85rem; margin-top: 6px;">Ref Token Hash: ID-${item.id || 'NEW'}</p>
+                            <p style="margin: 4px 0; font-size: 0.9rem; color: #475569;">${courseTitle}</p>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                                <span class="badge badge-status">${item.status || 'PENDING'}</span>
+                                <span style="color: #94a3b8; font-size: 0.75rem;">System DB ID: #${item.id}</span>
+                            </div>
                         </div>
                     `;
                 });
