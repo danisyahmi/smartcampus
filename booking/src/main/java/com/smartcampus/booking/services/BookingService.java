@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+
 @Service
 public class BookingService {
 
@@ -18,23 +21,77 @@ public class BookingService {
     // Use the Docker container service name and the port defined
     private static final String SOAP_ENDPOINT = "http://library-soap-svc:8888/ws/library";
 
+    // concurrency control - prevents multiple concurrent requests from booking the same room/book simultaneously
+    private final ConcurrentHashMap<String, ReentrantLock> resourceLocks = new ConcurrentHashMap<>();
+    
     public BookingService(BookingRepository bookingRepository) {
         this.bookingRepository = bookingRepository;
+    }
+    
+    // ensures all requests targeting the same resource share the same lock
+    private ReentrantLock lockFor(String key) {
+        return resourceLocks.computeIfAbsent(key, k -> new ReentrantLock());
     }
 
     // Reserve discussion room
     public Map<String, String> reserveLegacyRoom(String roomId, String studentId, String bookingDate) {
-        return callLegacySoapSystem("reserveDiscussionRoom", Map.of(
+        // lock specific room and time slot before checking availability
+    	String lockKey = "ROOM:" + roomId + ":" + bookingDate;
+        ReentrantLock lock = lockFor(lockKey);
+        lock.lock();
+        try {
+        	LocalDateTime slot = LocalDateTime.parse(bookingDate);
+        	boolean alreadyBooked = bookingRepository
+                    .existsByResourceIdAndStartTimeAndStatus(roomId, slot, "ACTIVE");
+
+            if (alreadyBooked) {
+                Map<String, String> conflict = new HashMap<>();
+                conflict.put("status", "CONFLICT");
+                conflict.put("message", "Room " + roomId + " is already booked for " + bookingDate);
+                return conflict;
+            }
+        }
+    	
+    	return callLegacySoapSystem("reserveDiscussionRoom", Map.of(
                 "roomId", roomId,
                 "studentId", studentId,
                 "bookingDate", bookingDate), roomId, studentId);
+    	
+	    } catch (Exception e) {
+	        // catches bad bookingDate format so it doesn't crash the request with an unhandled exception
+	        Map<String, String> result = new HashMap<>();
+	        result.put("status", "ERROR");
+	        result.put("message", "Invalid bookingDate format, expected ISO-8601 (e.g. 2026-06-25T10:00:00).");
+	        return result;
+	    } finally {
+	        lock.unlock();
+	    }
     }
 
     // Loan book operation
     public Map<String, String> loanLegacyBook(String bookId, String studentId) {
-        return callLegacySoapSystem("loanBook", Map.of(
-                "bookId", bookId,
-                "studentId", studentId), bookId, studentId);
+        // lock specific book before checking loan status
+    	String lockKey = "BOOK:" + bookId;
+        ReentrantLock lock = lockFor(lockKey);
+        lock.lock();
+        try {
+            // check if this book is already on active loan before calling the legacy system
+            boolean alreadyOnLoan = bookingRepository
+                    .existsByResourceIdAndStatus(bookId, "ACTIVE");
+
+            if (alreadyOnLoan) {
+                Map<String, String> conflict = new HashMap<>();
+                conflict.put("status", "CONFLICT");
+                conflict.put("message", "Book " + bookId + " is currently on loan.");
+                return conflict;
+            }
+
+	    	return callLegacySoapSystem("loanBook", Map.of(
+	                "bookId", bookId,
+	                "studentId", studentId), bookId, studentId);
+        } finally {
+            lock.unlock();
+        }
     }
 
     // --- CENTRALIZED REUSABLE SOAP HANDLING ENGINE ---
