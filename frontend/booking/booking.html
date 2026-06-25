@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCampus - Booking & Allocations</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 950px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+        .header-actions {
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .back-link {
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 500;
+        }
+        .back-link:hover { color: #1e293b; }
+        
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+        }
+        
+        .panel {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .panel h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: #1e293b;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #475569;
+        }
+        .form-group input {
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        .btn {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
+            width: 100%;
+            transition: background-color 0.1s ease;
+        }
+        .btn:hover { background-color: #1d4ed8; }
+        .btn-reserve { background-color: #8b5cf6; }
+        .btn-reserve:hover { background-color: #7c3aed; }
+        .btn-loan { background-color: #0ea5e9; }
+        .btn-loan:hover { background-color: #0284c7; }
+
+        /* Console Output Logs */
+        .response-log {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            display: none;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .log-success { background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+        .log-error { background-color: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+    </style>
+</head>
+<body>
+
+    <div class="header-actions">
+        <a href="/index.html" class="back-link">← Back to Dashboard</a>
+        <h1 style="margin: 8px 0 0 0;">🛏️ Booking & Legacy Allocations</h1>
+    </div>
+
+    <div class="grid-layout">
+        
+        <div class="panel">
+            <div>
+                <h3>Hostel Room Reservation</h3>
+                <form id="reserveForm" onsubmit="handleReserve(event)">
+                    <div class="form-group">
+                        <label for="roomStudentId">Student ID Token</label>
+                        <input type="text" id="roomStudentId" required placeholder="e.g. S12345">
+                    </div>
+                    <div class="form-group">
+                        <label for="roomId">Room Number / Block</label>
+                        <input type="text" id="roomId" required placeholder="e.g. A-302">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookingDate">Reservation Date</label>
+                        <input type="date" id="bookingDate" required>
+                    </div>
+                    <button type="submit" class="btn btn-reserve">Request Room Allocation</button>
+                </form>
+            </div>
+            <div id="reserveLog" class="response-log"></div>
+        </div>
+
+        <div class="panel">
+            <div>
+                <h3>Legacy Library Book Loan</h3>
+                <form id="loanForm" onsubmit="handleLoan(event)">
+                    <div class="form-group">
+                        <label for="bookStudentId">Student ID Token</label>
+                        <input type="text" id="bookStudentId" required placeholder="e.g. S12345">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookId">Book ISBN / ID</label>
+                        <input type="text" id="bookId" required placeholder="e.g. ISBN-9783161484100">
+                    </div>
+                    <button type="submit" class="btn btn-loan">Process Book Loan</button>
+                </form>
+            </div>
+            <div id="loanLog" class="response-log"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost/api/bookings';
+
+        // Handles @PostMapping("/reserve")
+        async function handleReserve(event) {
+            event.preventDefault();
+            const logDiv = document.getElementById('reserveLog');
+            clearLog(logDiv);
+
+            const payload = {
+                studentId: document.getElementById('roomStudentId').value,
+                roomId: document.getElementById('roomId').value,
+                bookingDate: document.getElementById('bookingDate').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/reserve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                showLog(logDiv, data, response.ok);
+                if (response.ok) document.getElementById('reserveForm').reset();
+
+            } catch (error) {
+                showErrorLog(logDiv, 'Failed to establish connection with Gateway reservation system.');
+            }
+        }
+
+        // Handles @PostMapping("/loan")
+        async function handleLoan(event) {
+            event.preventDefault();
+            const logDiv = document.getElementById('loanLog');
+            clearLog(logDiv);
+
+            const payload = {
+                studentId: document.getElementById('bookStudentId').value,
+                bookId: document.getElementById('bookId').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/loan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                showLog(logDiv, data, response.ok);
+                if (response.ok) document.getElementById('loanForm').reset();
+
+            } catch (error) {
+                showErrorLog(logDiv, 'Failed to establish connection with Gateway loan execution system.');
+            }
+        }
+
+        function showLog(element, data, isOk) {
+            element.style.display = 'block';
+            element.className = `response-log ${isOk ? 'log-success' : 'log-error'}`;
+            element.innerText = JSON.stringify(data, null, 2);
+        }
+
+        function showErrorLog(element, message) {
+            element.style.display = 'block';
+            element.className = 'response-log log-error';
+            element.innerText = `Status: ERROR\nMessage: ${message}`;
+        }
+
+        function clearLog(element) {
+            element.style.display = 'none';
+            element.innerText = '';
+        }
+    </script>
+</body>
+</html>

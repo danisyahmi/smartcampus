@@ -109,6 +109,14 @@ services:
       timeout: 5s
       retries: 3
   
+  frontend:
+    build: ./frontend
+    container_name: frontend-module
+    ports:
+      - "3000:80"
+    networks:
+      - micronet
+
   rabbitmq-server:
     image: rabbitmq:3-management
     container_name: rabbitmq-server
