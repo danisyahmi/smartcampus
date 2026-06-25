@@ -102,15 +102,32 @@ public class BookingService {
     }
 
     // CENTRALIZED REUSABLE SOAP HANDLING ENGINE 
-    private Map<String, String> callLegacySoapSystem(String operation, Map<String, String> arguments, String resourceId,
+ private Map<String, String> callLegacySoapSystem(String operation, Map<String, String> arguments, String resourceId,
             String studentId) {
+
+        // 1. Determine time and perform local Database Conflict Check FIRST
+        LocalDateTime slotTime = LocalDateTime.now();
+        
+        if (arguments.containsKey("bookingDate")) {
+            // Room Reservation Check: Is it booked at this exact time?
+            slotTime = LocalDateTime.parse(arguments.get("bookingDate"));
+            if (bookingRepository.existsByResourceIdAndStartTimeAndStatus(resourceId, slotTime, "ACTIVE")) {
+                return Map.of("status", "CONFLICT", "message", "Discussion Room " + resourceId + " is already reserved for this time slot.");
+            }
+        } else {
+            // Book Loan Check: Is this book currently out right now?
+            if (bookingRepository.existsByResourceIdAndStatus(resourceId, "ACTIVE")) {
+                return Map.of("status", "CONFLICT", "message", "The book " + resourceId + " has already been loaned out.");
+            }
+        }
+
         Map<String, String> result = new HashMap<>();
 
-        // Instantiate local audit log entity
+        // 2. Instantiate local audit log entity
         Booking localBooking = new Booking();
         localBooking.setStudentId(studentId);
         localBooking.setResourceId(resourceId);
-        localBooking.setStartTime(LocalDateTime.now());
+        localBooking.setStartTime(slotTime); // 🔥 FIX: Saves actual booking time, not current server time
 
         try {
             MessageFactory messageFactory = MessageFactory.newInstance();

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartCampus - Booking & Allocations</title>
+    <title>SmartCampus - Resources & Bookings</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -104,18 +104,18 @@
 
     <div class="header-actions">
         <a href="/index.html" class="back-link">← Back to Dashboard</a>
-        <h1 style="margin: 8px 0 0 0;">🛏️ Booking & Legacy Allocations</h1>
+        <h1 style="margin: 8px 0 0 0;">🗣️ Discussion Rooms & Library Loans</h1>
     </div>
 
     <div class="grid-layout">
         
         <div class="panel">
             <div>
-                <h3>Hostel Room Reservation</h3>
+                <h3>Discussion Room Reservation</h3>
                 <form id="reserveForm" onsubmit="handleReserve(event)">
                     <div class="form-group">
-                        <label for="roomStudentId">Student ID Token</label>
-                        <input type="text" id="roomStudentId" required placeholder="e.g. S12345">
+                        <label for="roomStudentId">Student ID (Matric No)</label>
+                        <input type="text" id="roomStudentId" required placeholder="e.g. B032510001">
                     </div>
                     <div class="form-group">
                         <label for="roomId">Room Number / Block</label>
@@ -125,7 +125,11 @@
                         <label for="bookingDate">Reservation Date</label>
                         <input type="date" id="bookingDate" required>
                     </div>
-                    <button type="submit" class="btn btn-reserve">Request Room Allocation</button>
+                    <div class="form-group">
+                        <label for="bookingTime">Reservation Time</label>
+                        <input type="time" id="bookingTime" required>
+                    </div>
+                    <button type="submit" class="btn btn-reserve">Reserve Discussion Room</button>
                 </form>
             </div>
             <div id="reserveLog" class="response-log"></div>
@@ -136,8 +140,8 @@
                 <h3>Legacy Library Book Loan</h3>
                 <form id="loanForm" onsubmit="handleLoan(event)">
                     <div class="form-group">
-                        <label for="bookStudentId">Student ID Token</label>
-                        <input type="text" id="bookStudentId" required placeholder="e.g. S12345">
+                        <label for="bookStudentId">Student ID (Matric No)</label>
+                        <input type="text" id="bookStudentId" required placeholder="e.g. B032510002">
                     </div>
                     <div class="form-group">
                         <label for="bookId">Book ISBN / ID</label>
@@ -160,10 +164,14 @@
             const logDiv = document.getElementById('reserveLog');
             clearLog(logDiv);
 
+            const datePart = document.getElementById('bookingDate').value;
+            const timePart = document.getElementById('bookingTime').value;
+            const formattedDateTime = `${datePart}T${timePart}:00`;
+
             const payload = {
-                studentId: document.getElementById('roomStudentId').value,
-                roomId: document.getElementById('roomId').value,
-                bookingDate: document.getElementById('bookingDate').value
+                studentId: document.getElementById('roomStudentId').value.trim(),
+                roomId: document.getElementById('roomId').value.trim(),
+                bookingDate: formattedDateTime
             };
 
             try {
@@ -189,8 +197,8 @@
             clearLog(logDiv);
 
             const payload = {
-                studentId: document.getElementById('bookStudentId').value,
-                bookId: document.getElementById('bookId').value
+                studentId: document.getElementById('bookStudentId').value.trim(),
+                bookId: document.getElementById('bookId').value.trim()
             };
 
             try {
