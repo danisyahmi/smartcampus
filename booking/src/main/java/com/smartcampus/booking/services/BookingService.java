@@ -9,6 +9,7 @@ import com.smartcampus.booking.repositories.BookingRepository;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -20,6 +21,11 @@ public class BookingService {
 
     public BookingService(BookingRepository bookingRepository) {
         this.bookingRepository = bookingRepository;
+    }
+
+    public List<Booking> getAllBookingsList() {
+        // Calls your JPA repository method to grab all seeded rows
+        return bookingRepository.findAll(); 
     }
 
     // Reserve discussion room
@@ -37,7 +43,7 @@ public class BookingService {
                 "studentId", studentId), bookId, studentId);
     }
 
-    // --- CENTRALIZED REUSABLE SOAP HANDLING ENGINE ---
+    // CENTRALIZED REUSABLE SOAP HANDLING ENGINE 
     private Map<String, String> callLegacySoapSystem(String operation, Map<String, String> arguments, String resourceId,
             String studentId) {
         Map<String, String> result = new HashMap<>();
