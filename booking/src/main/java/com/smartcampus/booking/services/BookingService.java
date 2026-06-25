@@ -33,6 +33,8 @@ public class BookingService {
     // ensures all requests targeting the same resource share the same lock
     private ReentrantLock lockFor(String key) {
         return resourceLocks.computeIfAbsent(key, k -> new ReentrantLock());
+    }
+    
     public List<Booking> getAllBookingsList() {
         // Calls your JPA repository method to grab all seeded rows
         return bookingRepository.findAll(); 

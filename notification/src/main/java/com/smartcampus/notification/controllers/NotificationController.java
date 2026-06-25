@@ -1,6 +1,5 @@
 package com.smartcampus.notification.controllers;
 
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
