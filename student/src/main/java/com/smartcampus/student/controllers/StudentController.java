@@ -70,7 +70,7 @@ public class StudentController {
     // Delete student by id
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        return service.delete(id) ? ResponseEntity.noContent().<Void>build(): ResponseEntity.notFound().build();
+        return service.delete(id) ? ResponseEntity.noContent().<Void>build() : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/health")

@@ -17,7 +17,7 @@ public class Course {
     private Long id; // Internal DB auto-increment primary key
 
     @Column(name = "course_code", unique = true, nullable = false)
-    private String courseCode; // e.g., "BITM2113"
+    private String courseCode;
 
     @Column(nullable = false)
     private String title;
@@ -26,5 +26,5 @@ public class Course {
     private Integer credits;
 
     @Column(nullable = false)
-    private Integer capacity; // Max students allowed (Used for Requirement R5/R9 checks)
+    private Integer capacity; // Max students allowed 
 }

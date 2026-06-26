@@ -21,7 +21,7 @@ public class EnrollmentService {
     private final RabbitTemplate rabbitTemplate;
     private final RestTemplate restTemplate;
 
-    // Dynamically injects the network URL from Docker 
+    // Dynamically injects the network URL from Docker
     @Value("${external.student-service.url:http://localhost:8081}")
     private String studentServiceUrl;
 
@@ -29,9 +29,9 @@ public class EnrollmentService {
     private static final String EXCHANGE_NAME = "notification.exchange";
     private static final String ROUTING_KEY = "routing.enrolment";
 
-    public EnrollmentService(EnrollmentRepository enrollmentRepository, 
-                             CourseRepository courseRepository, 
-                             RabbitTemplate rabbitTemplate) {
+    public EnrollmentService(EnrollmentRepository enrollmentRepository,
+            CourseRepository courseRepository,
+            RabbitTemplate rabbitTemplate) {
         this.enrollmentRepository = enrollmentRepository;
         this.courseRepository = courseRepository;
         this.rabbitTemplate = rabbitTemplate;
@@ -40,7 +40,7 @@ public class EnrollmentService {
 
     // Enrol a student into a course
     public Enrollment enrol(String studentId, String courseCode, String semester) {
-        
+
         // Validate student exists by calling student profile service via Nginx
         String validationUrl = studentServiceUrl + "/api/students/matric/" + studentId;
         try {
@@ -49,7 +49,8 @@ public class EnrollmentService {
         } catch (HttpClientErrorException.NotFound e) {
             throw new IllegalArgumentException("Validation Failure: Student " + studentId + " does not exist.");
         } catch (Exception e) {
-            throw new IllegalStateException("Student Service is currently unreachable. Graceful degradation triggered.");
+            throw new IllegalStateException(
+                    "Student Service is currently unreachable. Graceful degradation triggered.");
         }
 
         // Fetch the target course from the internal catalog database
@@ -58,8 +59,10 @@ public class EnrollmentService {
 
         // Verify class capacity constraint
         long activeEnrolledCount = enrollmentRepository.countByCourseCourseCodeAndStatus(courseCode, "ENROLLED");
-        if (activeEnrolledCount >= course.getCapacity()) {
-            throw new IllegalStateException("Cannot enroll: Course " + courseCode + " has reached its max capacity of " + course.getCapacity());
+        if (course.getCapacity() != null && course.getCapacity() > 0) {
+            if (activeEnrolledCount >= course.getCapacity()) {
+                throw new IllegalStateException("Cannot enroll: Course " + courseCode + " has reached capacity.");
+            }
         }
 
         // Save the permanent record to enrollment_db
@@ -68,7 +71,7 @@ public class EnrollmentService {
         enrollment.setCourse(course);
         enrollment.setSemester(semester);
         enrollment.setStatus("ENROLLED");
-        
+
         Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
 
         // Asynchronous choreography message push
@@ -90,7 +93,7 @@ public class EnrollmentService {
     public List<Enrollment> getByStudent(String studentId) {
         return enrollmentRepository.findByStudentId(studentId);
     }
-    
+
     // Get all system enrollments
     public List<Enrollment> findAll() {
         return enrollmentRepository.findAll();

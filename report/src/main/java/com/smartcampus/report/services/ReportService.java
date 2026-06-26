@@ -17,7 +17,7 @@ public class ReportService {
     private static final String STUDENT_SERVICE_URL = "http://student-svc:8081/api/students/";
     private static final String ENROLLMENT_SERVICE_URL = "http://enrollment-svc:8082/api/enrollments/";
     private static final String BOOKING_SERVICE_URL = "http://booking-api-svc:8084/api/bookings";
-    private static final String NOTIFICATION_SERVICE_URL = "http://notification-svc:8083/api/notifications/";
+    private static final String NOTIFICATION_SERVICE_URL = "http://notification-svc:8083/api/notifications";
 
     @SuppressWarnings("unchecked")
     public Report generateDashboardMetrics() {
@@ -49,8 +49,14 @@ public class ReportService {
             }
 
             // Fetch Notifications
-            List<Map<String, Object>> notifications = restTemplate.getForObject(NOTIFICATION_SERVICE_URL, List.class);
-            report.setTotalNotifications(notifications != null ? notifications.size() : 0);
+            try {
+                List<Map<String, Object>> notifications = restTemplate.getForObject(NOTIFICATION_SERVICE_URL,
+                        List.class);
+                report.setTotalNotifications(notifications != null ? notifications.size() : 0);
+            } catch (Exception e) {
+                System.err.println("Notification Service fetch failed: " + e.getMessage());
+                report.setTotalNotifications(0);
+            }
 
         } catch (Exception e) {
             // Fallback strategy if a microservice container is booting up or down
