@@ -44,7 +44,7 @@ public class EnrollmentService {
         // Validate student exists by calling student profile service via Nginx
         String validationUrl = studentServiceUrl + "/api/students/matric/" + studentId;
         try {
-            // Requirement R7/R9: Network verification call
+            // Network verification call
             restTemplate.getForObject(validationUrl, Object.class);
         } catch (HttpClientErrorException.NotFound e) {
             throw new IllegalArgumentException("Validation Failure: Student " + studentId + " does not exist.");
