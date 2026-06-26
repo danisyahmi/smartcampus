@@ -11,16 +11,27 @@ import org.springframework.stereotype.Service;
 import com.smartcampus.notification.NotificationRepository;
 import com.smartcampus.notification.models.Notification;
 
+import org.springframework.scheduling.annotation.Async;
+
 @Service
 public class NotificationService {
 
     @Autowired
     private NotificationRepository repository;
 
+    @Async
     public Notification sendNotification(String type, String message, String matricNo) {
-        if (type == null || type.isBlank() || message == null || message.isBlank()) {
-            return null;
+	if (type == null || type.isBlank() || message == null || message.isBlank()) {
+        return null;
+    }
+        
+        // simulating a slow network or heavy processing task
+        try {
+            Thread.sleep(2000); 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
+        
         Notification n = new Notification(
             UUID.randomUUID().toString(),
             type,
