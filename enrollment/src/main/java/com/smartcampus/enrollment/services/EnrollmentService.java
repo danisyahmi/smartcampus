@@ -2,6 +2,7 @@ package com.smartcampus.enrollment.services;
 
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -19,7 +20,7 @@ public class EnrollmentService {
     private final EnrollmentRepository enrollmentRepository;
     private final CourseRepository courseRepository;
     private final RabbitTemplate rabbitTemplate;
-    private final RestTemplate restTemplate;
+    private RestTemplate restTemplate;
 
     // Dynamically injects the network URL from Docker
     @Value("${external.student-service.url:http://localhost:8081}")
@@ -36,6 +37,11 @@ public class EnrollmentService {
         this.courseRepository = courseRepository;
         this.rabbitTemplate = rabbitTemplate;
         this.restTemplate = new RestTemplate(); // Standard runtime instantiation
+
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(3000);
+        factory.setReadTimeout(3000);
+        this.restTemplate = new RestTemplate(factory);
     }
 
     // Enrol a student into a course
