@@ -81,18 +81,25 @@ public class EnrollmentService {
         Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
 
         // Asynchronous choreography message push
-        try {
-            // Creating message payload for Notification service
-        	EnrollmentEvent event = new EnrollmentEvent(studentId, course.getTitle(), semester);
-            
-            System.out.println("Enrolment database commit complete! Pushing payload to RabbitMQ...");
-            rabbitTemplate.convertAndSend(EXCHANGE_NAME, ROUTING_KEY, event);
-        } catch (Exception ex) {
-            // Log messaging error cleanly so the actual database mutation doesn't roll back
-            System.err.println("Non-blocking failure: Messaging broker down. Logged: " + ex.getMessage());
-        }
+        pushNotification(
+                savedEnrollment.getStudentId(),
+                "ENROLLMENT",
+                "Successfully registered for course " + course.getCourseCode() + ": " + course.getTitle() + ".");
 
         return savedEnrollment;
+    }
+
+    private void pushNotification(String matricNo, String type, String message) {
+        try {
+            EnrollmentEvent event = new EnrollmentEvent(matricNo, type, message);
+
+            System.out.println("Enrolment database commit complete! Pushing payload to RabbitMQ...");
+            System.out.println("Pushing to Exchange: [" + EXCHANGE_NAME + "] with Key: [" + ROUTING_KEY + "]");
+
+            rabbitTemplate.convertAndSend(EXCHANGE_NAME, ROUTING_KEY, event);
+        } catch (Exception ex) {
+            System.err.println("Non-blocking failure: Messaging broker down. Logged: " + ex.getMessage());
+        }
     }
 
     // Get all enrollments for a specific student

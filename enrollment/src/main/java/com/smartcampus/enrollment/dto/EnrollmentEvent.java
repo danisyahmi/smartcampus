@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EnrollmentEvent {
-    private String studentEmail;
-    private String courseName;
-    private String matricNo; 
+    private String matricNo;
+    private String type;
+    private String message;
 }

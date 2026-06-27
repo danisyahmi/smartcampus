@@ -44,7 +44,7 @@ ON DUPLICATE KEY UPDATE `course_code` = VALUES(`course_code`);
 
 INSERT INTO `enrollments` (`student_id`, `course_id`, `semester`, `status`) VALUES
 ('B032510001', 1, '2025/2026', 'ENROLLED'),
-('B032510002', 2, '2025/2026', 'PENDING'),
+('B032510002', 2, '2025/2026', 'ENROLLED'),
 ('B032510003', 2, '2025/2026', 'ENROLLED');
 
 USE `booking_db`;

@@ -18,9 +18,9 @@ public class NotificationListener {
 
         // matches table schema mapping
         notificationService.sendNotification(
-            event.getMatricNo(), 
             event.getType(), 
-            event.getMessage()
+            event.getMessage(), 
+            event.getMatricNo()
         );
     }
 }

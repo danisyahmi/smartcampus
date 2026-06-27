@@ -189,23 +189,24 @@
         </div>
     </div>
     <div class="panel" style="margin-top: 24px; max-width: 100%;">
-    <h3>📚 Available Course Directory</h3>
-    <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 12px;">
-            <thead>
-                <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
-                    <th style="padding: 12px; font-size: 0.85rem; font-weight: 600; color: #475569;">Course Code</th>
-                    <th style="padding: 12px; font-size: 0.85rem; font-weight: 600; color: #475569;">Title</th>
-                    <th style="padding: 12px; font-size: 0.85rem; font-weight: 600; color: #475569; text-align: center;">Credits</th>
-                    <th style="padding: 12px; font-size: 0.85rem; font-weight: 600; color: #475569; text-align: center;">Capacity</th>
-                </tr>
-            </thead>
-            <tbody id="courseTableBody">
-                <tr>
-                    <td colspan="4" style="padding: 20px; text-align: center; color: #64748b;">Loading course repository...</td>
-                </tr>
-            </tbody>
-        </table>
+        <h3>📚 Available Course Directory</h3>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 12px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                        <th style="padding: 12px; font-size: 0.85rem; font-weight: 600; color: #475569;">Course Code</th>
+                        <th style="padding: 12px; font-size: 0.85rem; font-weight: 600; color: #475569;">Title</th>
+                        <th style="padding: 12px; font-size: 0.85rem; font-weight: 600; color: #475569; text-align: center;">Credits</th>
+                        <th style="padding: 12px; font-size: 0.85rem; font-weight: 600; color: #475569; text-align: center;">Enrolled Status</th>
+                    </tr>
+                </thead>
+                <tbody id="courseTableBody">
+                    <tr>
+                        <td colspan="4" style="padding: 20px; text-align: center; color: #64748b;">Loading course repository...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>
@@ -241,10 +242,8 @@
 
                 successDiv.style.display = 'block';
                 document.getElementById('enrollForm').reset();
-                
-                if(payload.studentId === document.getElementById('searchStudentId').value.trim()) {
-                    lookupEnrollments();
-                }
+
+                fetchAndDisplayCourses();
 
             } catch (error) {
                 errorDiv.innerText = error.message;

@@ -8,4 +8,5 @@ public class CourseDTO {
     private String title;
     private Integer credits;
     private Integer capacity;
+    
 }
