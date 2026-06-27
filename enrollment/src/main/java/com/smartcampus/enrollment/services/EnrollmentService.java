@@ -28,7 +28,7 @@ public class EnrollmentService {
 
     // RabbitMQ Constants from your config
     private static final String EXCHANGE_NAME = "notification.exchange";
-    private static final String ROUTING_KEY = "routing.enrolment";
+    private static final String ROUTING_KEY = "routing.enrollment";
 
     public EnrollmentService(EnrollmentRepository enrollmentRepository,
             CourseRepository courseRepository,

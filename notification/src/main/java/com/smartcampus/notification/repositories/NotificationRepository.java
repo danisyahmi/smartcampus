@@ -1,4 +1,4 @@
-package com.smartcampus.notification;
+package com.smartcampus.notification.repositories;
 
 import java.util.List;
 
