@@ -9,6 +9,7 @@ import com.smartcampus.enrollment.dto.CourseDTO;
 import com.smartcampus.enrollment.dto.EnrollmentEvent;
 import com.smartcampus.enrollment.models.Course;
 import com.smartcampus.enrollment.repositories.CourseRepository;
+import com.smartcampus.enrollment.repositories.EnrollmentRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -16,13 +17,15 @@ import jakarta.transaction.Transactional;
 public class CourseService {
 
     private final CourseRepository courseRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final RabbitTemplate rabbitTemplate;
 
     private static final String EXCHANGE_NAME = "notification.exchange";
     private static final String ROUTING_KEY   = "routing.enrollment";
 
-    public CourseService(CourseRepository courseRepository, RabbitTemplate rabbitTemplate) {
+    public CourseService(CourseRepository courseRepository, EnrollmentRepository enrollmentRepository, RabbitTemplate rabbitTemplate) {
         this.courseRepository = courseRepository;
+        this.enrollmentRepository = enrollmentRepository;
         this.rabbitTemplate   = rabbitTemplate;
     }
 
@@ -52,10 +55,15 @@ public class CourseService {
 
     @Transactional
     public void deleteCourse(String courseCode) {
-        if (courseRepository.findByCourseCode(courseCode).isEmpty()) {
-            throw new IllegalArgumentException("Course not found.");
-        }
-        courseRepository.deleteByCourseCode(courseCode);
+        Course course = courseRepository.findByCourseCode(courseCode)
+            .orElseThrow(() -> new IllegalArgumentException("Course not found."));
+
+        enrollmentRepository.deleteByCourse(course);
+
+        courseRepository.delete(course);
+
+        pushNotification("SYSTEM", "ENROLLMENT",
+            "Course removed: " + course.getCourseCode() + " - " + course.getTitle());
     }
 
     private void pushNotification(String matricNo, String type, String message) {

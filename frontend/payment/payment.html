@@ -360,7 +360,7 @@
 </div>
 
 <script>
-    const PAYMENT_API = '/api/payments/process';
+    const PAYMENT_API = 'http://localhost/api/payments/process';
 
     // Read URL parameters
     const params = new URLSearchParams(window.location.search);
@@ -384,10 +384,12 @@
     }
 
     // Payment method selector
-    function selectMethod(method) {
-        document.querySelectorAll('.method-card').forEach(c => c.classList.remove('selected'));
-        document.getElementById('card-' + method).classList.add('selected');
-    }
+	function selectMethod(method) {
+	    document.querySelectorAll('.method-card').forEach(c => c.classList.remove('selected'));
+	    document.getElementById('card-' + method).classList.add('selected');
+	    // Actually check the radio button
+	    document.querySelector(`input[name="payMethod"][value="${method}"]`).checked = true;
+	}
 
     // Process payment
     async function processPayment() {
@@ -404,7 +406,8 @@
             bookingType: bookingType,
             bookingId: bookingId,
             matricNo: matricInput,
-            isSuccessSimulation: isSuccess
+            successSimulation: isSuccess
+			resourceId: resourceId
             // amount tidak dihantar — sistem kira auto (ROOM=RM5, BOOK=RM3)
         };
 

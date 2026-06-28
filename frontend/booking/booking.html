@@ -174,23 +174,33 @@
                 bookingDate: formattedDateTime
             };
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/reserve`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+			try {
+			    const response = await fetch(`${API_BASE_URL}/reserve`, {
+			        method: 'POST',
+			        headers: { 'Content-Type': 'application/json' },
+			        body: JSON.stringify(payload)
+			    });
 
-                const data = await response.json();
-                showLog(logDiv, data, response.ok);
-				if (response.ok) {
-				    const roomIdVal = document.getElementById('roomId').value.trim();
-				    const matricVal = document.getElementById('roomStudentId').value.trim();
-				    window.location.href = `../payment/payment.html?type=ROOM&resourceId=${encodeURIComponent(roomIdVal)}&matricNo=${encodeURIComponent(matricVal)}&price=5.00`;
-				}
-            } catch (error) {
-                showErrorLog(logDiv, 'Failed to establish connection with Gateway reservation system.');
-            }
+			    const data = await response.json();
+
+			    if (response.ok) {
+			        const roomIdVal = document.getElementById('roomId').value.trim();
+			        const matricVal = document.getElementById('roomStudentId').value.trim();
+
+			        // Show clean success message instead of raw JSON
+			        logDiv.style.display = 'block';
+			        logDiv.className = 'response-log log-success';
+			        logDiv.innerText = `Booking confirmed! Redirecting to payment...`;
+
+			        setTimeout(() => {
+			            window.location.href = `../payment/payment.html?type=ROOM&resourceId=${encodeURIComponent(roomIdVal)}&matricNo=${encodeURIComponent(matricVal)}&price=5.00&bookingId=${data.id}`;
+			        }, 1000);
+			    } else {
+			        showLog(logDiv, data, false);
+			    }
+			} catch (error) {
+			    showErrorLog(logDiv, 'Failed to establish connection with Gateway reservation system.');
+			}
         }
 
         // Handles @PostMapping("/loan")
@@ -214,10 +224,18 @@
                 const data = await response.json();
                 showLog(logDiv, data, response.ok);
 				if (response.ok) {
-				    const bookIdVal = document.getElementById('bookId').value.trim(); // ← ambil dulu
-				    const matricVal = document.getElementById('bookStudentId').value.trim(); // ← ambil dulu
-				    document.getElementById('loanForm').reset(); // baru reset
-				    window.location.href = `../payment/payment.html?type=BOOK&resourceId=${encodeURIComponent(bookIdVal)}&matricNo=${encodeURIComponent(matricVal)}&price=3.00`;
+				    const bookIdVal = document.getElementById('bookId').value.trim();
+				    const matricVal = document.getElementById('bookStudentId').value.trim();
+
+				    logDiv.style.display = 'block';
+				    logDiv.className = 'response-log log-success';
+				    logDiv.innerText = `Loan confirmed! Redirecting to payment...`;
+
+				    setTimeout(() => {
+				        window.location.href = `../payment/payment.html?type=BOOK&resourceId=${encodeURIComponent(bookIdVal)}&matricNo=${encodeURIComponent(matricVal)}&price=3.00&bookingId=${data.id}`;
+				    }, 1000);
+				} else {
+				    showLog(logDiv, data, false);
 				}
             } catch (error) {
                 showErrorLog(logDiv, 'Failed to establish connection with Gateway loan execution system.');

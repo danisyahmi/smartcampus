@@ -166,7 +166,8 @@ public class BookingService {
                 result.put("message", "Legacy System Fault: " + fault.getFaultString());
 
                 localBooking.setStatus("FAILED");
-                bookingRepository.save(localBooking);
+                Booking saved = bookingRepository.save(localBooking);
+                result.put("id", String.valueOf(saved.getId()));
                 return result;
             }
 

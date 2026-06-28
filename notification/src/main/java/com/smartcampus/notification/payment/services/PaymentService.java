@@ -49,14 +49,14 @@ public class PaymentService {
         if (request.isSuccessSimulation()) {
             payment.setStatus("COMPLETE");
             String message = "Payment of RM" + String.format("%.2f", amount)
-                    + " is COMPLETE for " + request.getBookingType()
-                    + " booking (ID: " + request.getBookingId() + ").";
+            + " is COMPLETE for " + request.getBookingType()
+            + " [" + request.getResourceId() + "].";
             notificationService.sendNotification("PAYMENT_SUCCESS", message, request.getMatricNo());
         } else {
             payment.setStatus("PENDING");
             String message = "Payment of RM" + String.format("%.2f", amount)
-                    + " is PENDING for " + request.getBookingType()
-                    + " booking (ID: " + request.getBookingId() + "). Please retry.";
+            + " is PENDING for " + request.getBookingType()
+            + " [" + request.getResourceId() + "]. Please retry.";
             notificationService.sendNotification("PAYMENT_PENDING", message, request.getMatricNo());
         }
 
