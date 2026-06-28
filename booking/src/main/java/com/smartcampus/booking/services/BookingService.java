@@ -196,7 +196,8 @@ public class BookingService {
         }
 
         // Commit transaction tracking state data to local database before returning
-        bookingRepository.save(localBooking);
+        Booking saved = bookingRepository.save(localBooking);
+        result.put("id", String.valueOf(saved.getId()));
         return result;
     }
 }
