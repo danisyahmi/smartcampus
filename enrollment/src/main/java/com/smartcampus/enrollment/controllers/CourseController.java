@@ -42,6 +42,8 @@ public class CourseController {
             return ResponseEntity.ok(Map.of("message", "Course deleted successfully."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to delete course: " + e.getMessage()));
         }
     }
 }

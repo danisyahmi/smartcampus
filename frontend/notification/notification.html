@@ -139,6 +139,9 @@
         .badge-library     { background: #fef3c7; color: #92400e; }
         .badge-payment     { background: #fce7f3; color: #9d174d; }
         .badge-system      { background: #f3f4f6; color: #374151; }
+        .badge-create      { background: #dcfce7; color: #166534; }
+        .badge-update      { background: #fef9c3; color: #854d0e; }
+        .badge-delete      { background: #fee2e2; color: #991b1b; }
         .badge-default     { background: #e0e7ff; color: #3730a3; }
 
         .status-dot {
@@ -192,6 +195,9 @@
             <option value="BOOKING">Booking</option>
             <option value="LIBRARY">Library</option>
             <option value="PAYMENT">Payment</option>
+            <option value="CREATE">Create (Student)</option>
+            <option value="UPDATE">Update (Student)</option>
+            <option value="DELETE">Delete (Student)</option>
         </select>
 
         <select id="filterStatus" onchange="applyFilters()">
@@ -209,7 +215,7 @@
             <thead>
                 <tr>
                     <th style="width:32px;"></th>
-                    <th>Matric No</th>
+                    <th>ID</th>
                     <th>Type</th>
                     <th>Message</th>
                     <th>Timestamp</th>
@@ -286,6 +292,9 @@
                     library:    'badge-library',
                     payment:    'badge-payment',
                     system:     'badge-system',
+                    create:     'badge-create',
+                    update:     'badge-update',
+                    delete:     'badge-delete',
                 }[typeKey] || 'badge-default';
 
                 const rowClass  = n.read ? 'read' : 'unread';

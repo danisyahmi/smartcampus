@@ -1,44 +1,54 @@
-package com.smartcampus.notification.payment.models;
+package com.smartcampus.notification.models;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "payments")
-public class Payment {
-    
+@Table(name = "notifications")
+public class Notification {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    private String bookingType; 
-    private Long bookingId;
-    private Double amount;
-    private String status;
-    
+    @Column(nullable = false)
+    private String type;
+
+    @Column(nullable = false)
+    private String message;
+
+    @Column(nullable = false)
+    private String timestamp;
+
+    @Column(name = "is_read", nullable = false)
+    private boolean read;
+
     @Column(name = "matric_no")
-    private String matricNo; 
-    
-    private LocalDateTime paymentDate;
+    private String matricNo;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    
-    public String getBookingType() { return bookingType; }
-    public void setBookingType(String bookingType) { this.bookingType = bookingType; }
-    
-    public Long getBookingId() { return bookingId; }
-    public void setBookingId(Long bookingId) { this.bookingId = bookingId; }
-    
-    public Double getAmount() { return amount; }
-    public void setAmount(Double amount) { this.amount = amount; }
-    
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    
+    public Notification() {}
+
+    public Notification(String id, String type, String message, String timestamp, String matricNo) {
+        this.id = id;
+        this.type = type;
+        this.message = message;
+        this.timestamp = timestamp;
+        this.read = false;
+        this.matricNo = matricNo;
+    }
+
+    public String getId() { return id; }
+    public String getType() { return type; }
+    public String getMessage() { return message; }
+    public String getTimestamp() { return timestamp; }
+    public boolean isRead() { return read; }
     public String getMatricNo() { return matricNo; }
+
+    public void setId(String id) { this.id = id; }
+    public void setType(String type) { this.type = type; }
+    public void setMessage(String message) { this.message = message; }
+    public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+    public void setRead(boolean read) { this.read = read; }
     public void setMatricNo(String matricNo) { this.matricNo = matricNo; }
-    
-    public LocalDateTime getPaymentDate() { return paymentDate; }
-    public void setPaymentDate(LocalDateTime paymentDate) { this.paymentDate = paymentDate; }
 }

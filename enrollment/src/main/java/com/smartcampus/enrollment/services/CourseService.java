@@ -2,9 +2,11 @@ package com.smartcampus.enrollment.services;
 
 import java.util.List;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import com.smartcampus.enrollment.dto.CourseDTO;
+import com.smartcampus.enrollment.dto.EnrollmentEvent;
 import com.smartcampus.enrollment.models.Course;
 import com.smartcampus.enrollment.repositories.CourseRepository;
 
@@ -14,9 +16,14 @@ import jakarta.transaction.Transactional;
 public class CourseService {
 
     private final CourseRepository courseRepository;
+    private final RabbitTemplate rabbitTemplate;
 
-    public CourseService(CourseRepository courseRepository) {
+    private static final String EXCHANGE_NAME = "notification.exchange";
+    private static final String ROUTING_KEY   = "routing.enrollment";
+
+    public CourseService(CourseRepository courseRepository, RabbitTemplate rabbitTemplate) {
         this.courseRepository = courseRepository;
+        this.rabbitTemplate   = rabbitTemplate;
     }
 
     public List<Course> getAllCourses() {
@@ -35,7 +42,12 @@ public class CourseService {
         course.setCredits(dto.getCredits());
         course.setCapacity(dto.getCapacity());
 
-        return courseRepository.save(course);
+        Course saved = courseRepository.save(course);
+
+        pushNotification("SYSTEM", "ENROLLMENT",
+            "New course registered: " + saved.getCourseCode() + " - " + saved.getTitle());
+
+        return saved;
     }
 
     @Transactional
@@ -44,5 +56,14 @@ public class CourseService {
             throw new IllegalArgumentException("Course not found.");
         }
         courseRepository.deleteByCourseCode(courseCode);
+    }
+
+    private void pushNotification(String matricNo, String type, String message) {
+        try {
+            EnrollmentEvent event = new EnrollmentEvent(matricNo, type, message);
+            rabbitTemplate.convertAndSend(EXCHANGE_NAME, ROUTING_KEY, event);
+        } catch (Exception ex) {
+            System.err.println("Non-blocking failure: Messaging broker down. Logged: " + ex.getMessage());
+        }
     }
 }
