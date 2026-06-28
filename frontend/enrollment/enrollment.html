@@ -151,17 +151,62 @@
         </div>
 
         <div class="panel">
-            <h3>Lookup Student Schedule</h3>
-            <div class="search-bar">
-                <input type="text" id="searchStudentId" placeholder="Enter Student ID (e.g. B032510001)...">
-                <button class="btn" onclick="lookupEnrollments()">Search</button>
-            </div>
+            <h3>Course Management</h3>
             
-            <div id="enrollmentResults">
-                <p style="color: #64748b; text-align: center; margin-top: 20px;">Enter an ID above to display active course units.</p>
-            </div>
-        </div>
+            <form id="courseForm" onsubmit="submitCourse(event)" style="margin-bottom: 30px;">
+                <div class="form-group">
+                    <label for="newCourseCode">Course Code</label>
+                    <input type="text" id="newCourseCode" required placeholder="e.g. BITS2133">
+                </div>
+                <div class="form-group">
+                    <label for="newCourseTitle">Course Title</label>
+                    <input type="text" id="newCourseTitle" required placeholder="e.g. Advanced Databases">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="newCourseCredits">Credits</label>
+                        <input type="number" id="newCourseCredits" required min="1" max="6" value="3">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="newCourseCapacity">Capacity</label>
+                        <input type="number" id="newCourseCapacity" required min="1" value="40">
+                    </div>
+                </div>
+                <button type="submit" class="btn">Create Course</button>
+                <div id="courseFormError" class="error-msg"></div>
+                <div id="courseFormSuccess" class="success-msg">Course successfully created!</div>
+            </form>
 
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin-bottom: 20px;">
+
+            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1e293b; font-size: 0.95rem;">Delete Course</h4>
+            <div class="search-bar">
+                <input type="text" id="deleteCourseCode" placeholder="Enter Course Code to delete...">
+                <button class="btn" style="background-color: #ef4444;" onclick="deleteCourse()">Delete</button>
+            </div>
+            <div id="deleteError" class="error-msg"></div>
+            <div id="deleteSuccess" class="success-msg">Course deleted successfully!</div>
+        </div>
+    </div>
+    <div class="panel" style="margin-top: 24px; max-width: 100%;">
+        <h3>📚 Available Course Directory</h3>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 12px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                        <th style="padding: 12px; font-size: 0.85rem; font-weight: 600; color: #475569;">Course Code</th>
+                        <th style="padding: 12px; font-size: 0.85rem; font-weight: 600; color: #475569;">Title</th>
+                        <th style="padding: 12px; font-size: 0.85rem; font-weight: 600; color: #475569; text-align: center;">Credits</th>
+                        <th style="padding: 12px; font-size: 0.85rem; font-weight: 600; color: #475569; text-align: center;">Enrolled Status</th>
+                    </tr>
+                </thead>
+                <tbody id="courseTableBody">
+                    <tr>
+                        <td colspan="4" style="padding: 20px; text-align: center; color: #64748b;">Loading course repository...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>
@@ -176,7 +221,7 @@
             errorDiv.style.display = 'none';
             successDiv.style.display = 'none';
 
-            // 🔥 CHANGED: studentId left as String, no longer using parseInt()
+            // studentId left as String
             const payload = {
                 studentId: document.getElementById('studentId').value.trim(),
                 courseCode: document.getElementById('courseCode').value.trim(),
@@ -197,10 +242,8 @@
 
                 successDiv.style.display = 'block';
                 document.getElementById('enrollForm').reset();
-                
-                if(payload.studentId === document.getElementById('searchStudentId').value.trim()) {
-                    lookupEnrollments();
-                }
+
+                fetchAndDisplayCourses();
 
             } catch (error) {
                 errorDiv.innerText = error.message;
@@ -208,50 +251,107 @@
             }
         }
 
-        async function lookupEnrollments() {
-            const searchId = document.getElementById('searchStudentId').value.trim();
-            const resultsContainer = document.getElementById('enrollmentResults');
+        const COURSES_API_URL = 'http://localhost/api/courses'; // Ensure your port matches your Spring Boot server (e.g. localhost:8080)
+
+        document.addEventListener('DOMContentLoaded', fetchAndDisplayCourses);
+
+        async function fetchAndDisplayCourses() {
+            const tableBody = document.getElementById('courseTableBody');
             
-            if(!searchId) {
-                alert('Please provide a valid student code identification marker.');
-                return;
-            }
-
-            resultsContainer.innerHTML = '<p style="color: #64748b; text-align: center;">Fetching schedule profiles...</p>';
-
             try {
-                const response = await fetch(`${API_BASE_URL}/student/${searchId}`);
-                if(!response.ok) throw new Error('Data set mismatch error.');
+                const response = await fetch(COURSES_API_URL);
+                if (!response.ok) throw new Error('Could not retrieve active listings.');
+                
+                const courses = await response.json();
+                tableBody.innerHTML = ''; // Wipe existing rows
 
-                const schedules = await response.json();
-                resultsContainer.innerHTML = '';
-
-                if(schedules.length === 0) {
-                    resultsContainer.innerHTML = '<p style="color: #64748b; text-align: center; margin-top: 20px;">No course modules found for this reference.</p>';
+                if (courses.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="4" style="padding: 20px; text-align: center; color: #64748b;">No active courses registered.</td></tr>`;
                     return;
                 }
 
-                schedules.forEach(item => {
-                    const courseCode = item.course ? item.course.courseCode : 'Unassigned Unit';
-                    const courseTitle = item.course ? item.course.title : 'No Title Available';
-                    
-                    resultsContainer.innerHTML += `
-                        <div class="enrollment-item">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <strong>📚 ${courseCode}</strong>
-                                <span class="badge">${item.semester || 'N/A'}</span>
-                            </div>
-                            <p style="margin: 4px 0; font-size: 0.9rem; color: #475569;">${courseTitle}</p>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                                <span class="badge badge-status">${item.status || 'PENDING'}</span>
-                                <span style="color: #94a3b8; font-size: 0.75rem;">System DB ID: #${item.id}</span>
-                            </div>
-                        </div>
+                courses.forEach(course => {
+                    tableBody.innerHTML += `
+                        <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.15s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
+                            <td style="padding: 12px; font-weight: 600; color: #1e293b;">${course.courseCode}</td>
+                            <td style="padding: 12px; color: #334155;">${course.title}</td>
+                            <td style="padding: 12px; text-align: center;"><span class="badge" style="background:#f1f5f9; color:#475569;">${course.credits} HP</span></td>
+                            <td style="padding: 12px; text-align: center; font-weight: 500; color: #0284c7;">${course.capacity} Students</td>
+                        </tr>
                     `;
                 });
-
             } catch (error) {
-                resultsContainer.innerHTML = '<p style="color: #ef4444; text-align: center;">Gateway endpoint unreachable.</p>';
+                tableBody.innerHTML = `<tr><td colspan="4" style="padding: 20px; text-align: center; color: #ef4444;">Error fetching course table. Check API connectivity.</td></tr>`;
+            }
+        }
+        
+        async function submitCourse(event) {
+            event.preventDefault();
+            
+            const errorDiv = document.getElementById('courseFormError');
+            const successDiv = document.getElementById('courseFormSuccess');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            const payload = {
+                courseCode: document.getElementById('newCourseCode').value.trim(),
+                title: document.getElementById('newCourseTitle').value.trim(),
+                credits: parseInt(document.getElementById('newCourseCredits').value),
+                capacity: parseInt(document.getElementById('newCourseCapacity').value)
+            };
+
+            try {
+                const response = await fetch(`${COURSES_API_URL}/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to create course.');
+                }
+
+                successDiv.style.display = 'block';
+                document.getElementById('courseForm').reset();
+            } catch (error) {
+                errorDiv.innerText = error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        async function deleteCourse() {
+            const courseCode = document.getElementById('deleteCourseCode').value.trim();
+            const errorDiv = document.getElementById('deleteError');
+            const successDiv = document.getElementById('deleteSuccess');
+
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            if(!courseCode) {
+                errorDiv.innerText = 'Please provide a valid course code.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if(!confirm(`Are you sure you want to delete course ${courseCode}?`)) return;
+
+            try {
+                const response = await fetch(`${COURSES_API_URL}/${courseCode}`, {
+                    method: 'DELETE'
+                });
+
+                if(!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to delete course.');
+                }
+
+                successDiv.style.display = 'block';
+                document.getElementById('deleteCourseCode').value = '';
+            } catch (error) {
+                errorDiv.innerText = error.message;
+                errorDiv.style.display = 'block';
             }
         }
     </script>

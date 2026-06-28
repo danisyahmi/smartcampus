@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCampus - Payment</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f0f4ff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .payment-wrapper {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 16px;
+            text-decoration: none;
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .back-link:hover { color: #1e293b; }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        /* Header stripe */
+        .card-header {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            padding: 28px 28px 24px;
+            color: white;
+        }
+        .card-header .icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        .card-header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .card-header p {
+            font-size: 0.85rem;
+            opacity: 0.85;
+        }
+
+        /* Booking summary box */
+        .summary-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin: 24px 28px 0;
+            padding: 16px 18px;
+        }
+        .summary-box .summary-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            font-size: 0.9rem;
+            color: #475569;
+        }
+        .summary-row span:last-child { font-weight: 600; color: #1e293b; }
+        .summary-divider {
+            border: none;
+            border-top: 1px dashed #e2e8f0;
+            margin: 10px 0;
+        }
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-top: 4px;
+        }
+        .summary-total .price {
+            font-size: 1.25rem;
+            color: #2563eb;
+        }
+
+        /* Type badge */
+        .type-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .badge-room { background: #ede9fe; color: #6d28d9; }
+        .badge-book { background: #e0f2fe; color: #0369a1; }
+
+        /* Form section */
+        .form-section {
+            padding: 20px 28px 28px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        .form-group input, .form-group select {
+            padding: 10px 12px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #1e293b;
+            background: white;
+            transition: border-color 0.15s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        .form-group input[readonly] {
+            background: #f8fafc;
+            color: #64748b;
+        }
+
+        /* Payment method radio cards */
+        .method-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .method-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s;
+            position: relative;
+        }
+        .method-card input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+        }
+        .method-card:hover { border-color: #93c5fd; background: #f0f7ff; }
+        .method-card.selected { border-color: #2563eb; background: #eff6ff; }
+        .method-card .method-icon { font-size: 1.6rem; margin-bottom: 4px; }
+        .method-card .method-name { font-size: 0.82rem; font-weight: 600; color: #334155; }
+
+        /* Simulate toggle */
+        .simulate-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+        }
+        .simulate-row label {
+            font-size: 0.88rem;
+            color: #475569;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+        }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            inset: 0;
+            background: #cbd5e1;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .slider:before {
+            content: '';
+            position: absolute;
+            width: 18px; height: 18px;
+            left: 3px; top: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+        input:checked + .slider { background: #2563eb; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Pay button */
+        .btn-pay {
+            width: 100%;
+            padding: 14px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-pay:hover { background: #1d4ed8; }
+        .btn-pay:disabled { background: #93c5fd; cursor: not-allowed; }
+
+        /* Result panel */
+        .result-panel {
+            display: none;
+            margin: 0 28px 28px;
+            border-radius: 10px;
+            padding: 16px 18px;
+        }
+        .result-success {
+            background: #f0fdf4;
+            border: 1.5px solid #86efac;
+            color: #166534;
+        }
+        .result-pending {
+            background: #fefce8;
+            border: 1.5px solid #fde047;
+            color: #713f12;
+        }
+        .result-panel .result-icon { font-size: 1.8rem; margin-bottom: 6px; }
+        .result-panel h3 { font-size: 1rem; margin-bottom: 6px; }
+        .result-panel p { font-size: 0.85rem; opacity: 0.85; }
+        .result-panel .ref-no {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            font-family: monospace;
+            background: rgba(0,0,0,0.05);
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .spinner {
+            display: none;
+            width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="payment-wrapper">
+    <a href="../booking/booking.html" class="back-link">← Back to Booking</a>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="icon">💳</div>
+            <h2>Secure Payment</h2>
+            <p>SmartCampus Billing Gateway</p>
+        </div>
+
+        <!-- Booking Summary -->
+        <div class="summary-box">
+            <div class="summary-title">Booking Summary</div>
+            <div class="summary-row">
+                <span>Type</span>
+                <span id="summaryType">—</span>
+            </div>
+            <div class="summary-row">
+                <span>Resource ID</span>
+                <span id="summaryResource">—</span>
+            </div>
+            <div class="summary-row">
+                <span>Student (Matric No)</span>
+                <span id="summaryMatric">—</span>
+            </div>
+            <hr class="summary-divider">
+            <div class="summary-total">
+                <span>Total Amount</span>
+                <span class="price" id="summaryPrice">RM —</span>
+            </div>
+        </div>
+
+        <!-- Payment Form -->
+        <div class="form-section">
+
+            <div class="form-group">
+                <label>Payment Method</label>
+                <div class="method-grid">
+                    <div class="method-card selected" id="card-fpx" onclick="selectMethod('fpx')">
+                        <input type="radio" name="payMethod" value="fpx" checked>
+                        <div class="method-icon">🏦</div>
+                        <div class="method-name">FPX / Online Banking</div>
+                    </div>
+                    <div class="method-card" id="card-ewallet" onclick="selectMethod('ewallet')">
+                        <input type="radio" name="payMethod" value="ewallet">
+                        <div class="method-icon">📱</div>
+                        <div class="method-name">e-Wallet</div>
+                    </div>
+                    <div class="method-card" id="card-card" onclick="selectMethod('card')">
+                        <input type="radio" name="payMethod" value="card">
+                        <div class="method-icon">💳</div>
+                        <div class="method-name">Debit / Credit Card</div>
+                    </div>
+                    <div class="method-card" id="card-counter" onclick="selectMethod('counter')">
+                        <input type="radio" name="payMethod" value="counter">
+                        <div class="method-icon">🏫</div>
+                        <div class="method-name">Pay at Counter</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="matricInput">Confirm Matric No</label>
+                <input type="text" id="matricInput" placeholder="e.g. B032510001" required>
+            </div>
+
+            <button class="btn-pay" id="payBtn" onclick="processPayment()">
+                <span id="btnText">Pay Now</span>
+                <div class="spinner" id="spinner"></div>
+            </button>
+        </div>
+
+        <!-- Result -->
+        <div class="result-panel" id="resultPanel">
+            <div class="result-icon" id="resultIcon"></div>
+            <h3 id="resultTitle"></h3>
+            <p id="resultMessage"></p>
+            <div class="ref-no" id="resultRef"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const PAYMENT_API = 'http://localhost/api/payments/process';
+
+    // Read URL parameters
+    const params = new URLSearchParams(window.location.search);
+    const bookingType  = params.get('type')       || 'ROOM';
+    const resourceId   = params.get('resourceId') || '-';
+    const matricNo     = params.get('matricNo')   || '';
+    const price        = parseFloat(params.get('price') || (bookingType === 'BOOK' ? '3.00' : '5.00'));
+    const bookingId    = parseInt(params.get('bookingId') || '1');
+
+    // Populate summary
+    document.getElementById('summaryResource').textContent = resourceId;
+    document.getElementById('summaryMatric').textContent   = matricNo || '—';
+    document.getElementById('summaryPrice').textContent    = 'RM ' + price.toFixed(2);
+    document.getElementById('matricInput').value           = matricNo;
+
+    const typeBadge = document.getElementById('summaryType');
+    if (bookingType === 'BOOK') {
+        typeBadge.innerHTML = '<span class="type-badge badge-book">📚 Book Loan</span>';
+    } else {
+        typeBadge.innerHTML = '<span class="type-badge badge-room">🛏️ Room Booking</span>';
+    }
+
+    // Payment method selector
+	function selectMethod(method) {
+	    document.querySelectorAll('.method-card').forEach(c => c.classList.remove('selected'));
+	    document.getElementById('card-' + method).classList.add('selected');
+	    // Actually check the radio button
+	    document.querySelector(`input[name="payMethod"][value="${method}"]`).checked = true;
+	}
+
+    // Process payment
+    async function processPayment() {
+        const matricInput = document.getElementById('matricInput').value.trim();
+        if (!matricInput) {
+            alert('Please enter your Matric No to proceed.');
+            return;
+        }
+
+		const selectedMethod = document.querySelector('input[name="payMethod"]:checked')?.value || 'fpx';
+		const isSuccess = selectedMethod !== 'counter';
+
+        const payload = {
+            bookingType: bookingType,
+            bookingId: bookingId,
+            matricNo: matricInput,
+            successSimulation: isSuccess,
+			resourceId: resourceId
+            // amount tidak dihantar — sistem kira auto (ROOM=RM5, BOOK=RM3)
+        };
+
+        // Show loading state
+        const btn = document.getElementById('payBtn');
+        document.getElementById('btnText').style.display = 'none';
+        document.getElementById('spinner').style.display = 'block';
+        btn.disabled = true;
+        document.getElementById('resultPanel').style.display = 'none';
+
+        try {
+            const response = await fetch(PAYMENT_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            showResult(data, isSuccess);
+
+        } catch (error) {
+           showError('Unable to connect to Payment Gateway. Please try again.');
+        } finally {
+            document.getElementById('btnText').style.display = 'block';
+            document.getElementById('spinner').style.display = 'none';
+            btn.disabled = false;
+        }
+    }
+
+    function showResult(data, isSuccess) {
+        const panel = document.getElementById('resultPanel');
+        panel.style.display = 'block';
+
+        if (isSuccess) {
+            panel.className = 'result-panel result-success';
+            document.getElementById('resultIcon').textContent = '✅';
+            document.getElementById('resultTitle').textContent = 'Payment Successful!';
+            document.getElementById('resultMessage').textContent =
+                'Your payment has been processed. A notification has been sent to your account.';
+        } else {
+            panel.className = 'result-panel result-pending';
+            document.getElementById('resultIcon').textContent = '⏳';
+            document.getElementById('resultTitle').textContent = 'Payment Pending';
+            document.getElementById('resultMessage').textContent =
+                'Payment is pending. Please retry or contact the campus office.';
+        }
+
+        if (data && data.id) {
+            document.getElementById('resultRef').textContent = 'Payment ID: #' + data.id;
+        }
+
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function showError(msg) {
+        const panel = document.getElementById('resultPanel');
+        panel.style.display = 'block';
+        panel.className = 'result-panel result-pending';
+        document.getElementById('resultIcon').textContent = '❌';
+        document.getElementById('resultTitle').textContent = 'Connection Error';
+        document.getElementById('resultMessage').textContent = msg;
+        document.getElementById('resultRef').textContent = '';
+    }
+</script>
+</body>
+</html>

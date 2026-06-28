@@ -21,7 +21,9 @@ USE `enrollment_db`;
 CREATE TABLE IF NOT EXISTS `courses` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `course_code` VARCHAR(50) NOT NULL UNIQUE,
-    `title` VARCHAR(255) NOT NULL
+    `title` VARCHAR(255) NOT NULL,
+    `credits` INT NOT NULL DEFAULT 3,
+    `capacity` INT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS `enrollments` (
@@ -33,15 +35,16 @@ CREATE TABLE IF NOT EXISTS `enrollments` (
     FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`)
 );
 
-INSERT INTO `courses` (`id`, `course_code`, `title`) VALUES
-(1, 'BITS1223', 'Introduction to Computer Science'),
-(2, 'BITS1233', 'Software Architecture & Microservices'),
-(3, 'BITS1112', 'Programming Techniques')
+INSERT INTO `courses` (`id`, `course_code`, `title`, `credits`, `capacity`) VALUES
+(1, 'BITS1223', 'Introduction to Computer Science', 3, 40),
+(2, 'BITS1233', 'Software Architecture & Microservices', 3, 35),
+(3, 'BITS1112', 'Programming Techniques', 3, 40)
+
 ON DUPLICATE KEY UPDATE `course_code` = VALUES(`course_code`);
 
 INSERT INTO `enrollments` (`student_id`, `course_id`, `semester`, `status`) VALUES
 ('B032510001', 1, '2025/2026', 'ENROLLED'),
-('B032510002', 2, '2025/2026', 'PENDING'),
+('B032510002', 2, '2025/2026', 'ENROLLED'),
 ('B032510003', 2, '2025/2026', 'ENROLLED');
 
 USE `booking_db`;
@@ -51,13 +54,14 @@ CREATE TABLE IF NOT EXISTS `bookings` (
     `student_id` VARCHAR(255) NOT NULL,
     `resource_id` VARCHAR(255) NOT NULL,
     `start_time` DATETIME,
-    `status` VARCHAR(255) NOT NULL
+    `status` VARCHAR(255) NOT NULL,
+    `payment_status` ENUM('SUCCESS', 'FAILED') NOT NULL
 );
 
-INSERT INTO `bookings` (`student_id`, `resource_id`, `start_time`, `status`) VALUES
-('B032510001', 'A-302', '2026-06-24 09:00:00', 'ACTIVE'),
-('B032510002', 'ISBN-9783161484100', '2026-06-24 10:30:00', 'ACTIVE'),
-('B032510003', 'A-205', '2026-06-24 08:15:00', 'FAILED');
+INSERT INTO `bookings` (`student_id`, `resource_id`, `start_time`, `status`, `payment_status`) VALUES
+('B032510001', 'A-302', '2026-06-24 09:00:00', 'ACTIVE', 'SUCCESS'),
+('B032510002', 'ISBN-9783161484100', '2026-06-24 10:30:00', 'ACTIVE', 'SUCCESS'),
+('B032510003', 'A-205', '2026-06-24 08:15:00', 'FAILED', 'FAILED');
 
 USE `notification_db`;
 
@@ -66,9 +70,28 @@ CREATE TABLE IF NOT EXISTS `notifications` (
     `type` VARCHAR(255) NOT NULL,
     `message` VARCHAR(255) NOT NULL,
     `timestamp` VARCHAR(255) NOT NULL,
-    `is_read` TINYINT(1) NOT NULL DEFAULT 0
+    `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+    `matric_no` VARCHAR(255)
 );
 
-INSERT INTO `notifications` (`id`, `type`, `message`, `timestamp`, `is_read`) VALUES
-('ntf-001', 'BOOKING', 'Your reservation for room A-302 has been confirmed.', '2026-06-24T09:05:00', 0),
-('ntf-002', 'ENROLLMENT', 'Successfully registered for course SE212.', '2026-06-24T09:15:00', 1);
+INSERT INTO `notifications` (`id`, `type`, `message`, `timestamp`, `is_read`, `matric_no`) VALUES
+('ntf-001', 'BOOKING', 'Your reservation for room A-302 has been confirmed.', '2026-06-24T09:05:00', 0, 'B032510001'),
+('ntf-002', 'ENROLLMENT', 'Successfully registered for course SE212.', '2026-06-24T09:15:00', 1, 'B032510002');
+
+-- Harga default, jadikan hatga kekal untuk ROOM = RM5.00 dan BOOK = RM3.00
+USE `notification_db`;
+
+CREATE TABLE IF NOT EXISTS `payments` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `booking_type` VARCHAR(50) NOT NULL,
+    `booking_id` BIGINT NOT NULL,
+    `amount` DECIMAL(10, 2) NOT NULL,
+    `matric_no` VARCHAR(255) NOT NULL,
+    `status` VARCHAR(50) NOT NULL,
+    `payment_date` DATETIME
+);
+
+INSERT INTO `payments` (`booking_type`, `booking_id`, `amount`, `matric_no`, `status`, `payment_date`) VALUES
+('ROOM', 1, 5.00, 'B032510001', 'COMPLETE', '2026-06-24 09:05:00'),
+('BOOK', 2, 3.00, 'B032510002', 'COMPLETE', '2026-06-24 10:35:00'),
+('ROOM', 3, 5.00, 'B032510003', 'PENDING',  '2026-06-24 08:20:00');

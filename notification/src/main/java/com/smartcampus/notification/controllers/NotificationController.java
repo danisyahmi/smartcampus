@@ -3,6 +3,7 @@ package com.smartcampus.notification.controllers;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.smartcampus.notification.models.Notification;
 import com.smartcampus.notification.services.NotificationService;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/notifications")
 public class NotificationController {
@@ -57,7 +59,8 @@ public class NotificationController {
         try {
             String type = body.get("type");
             String message = body.get("message");
-            Notification n = service.sendNotification(type, message);
+            String matricNo = body.get("matricNo");
+            Notification n = service.sendNotification(type, message, matricNo);
             if (n == null) {
                 return ResponseEntity.status(400).body(Map.of("error", "Fields 'type' and 'message' are required"));
             }

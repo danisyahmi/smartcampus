@@ -154,11 +154,21 @@
           </div>
           <div class="form-group">
             <label for="firstName">First Name</label>
-            <input type="text" id="firstName" required placeholder="e.g. Zayn" />
+            <input
+              type="text"
+              id="firstName"
+              required
+              placeholder="e.g. Zayn"
+            />
           </div>
           <div class="form-group">
             <label for="lastName">Last Name</label>
-            <input type="text" id="lastName" required placeholder="e.g. Malik" />
+            <input
+              type="text"
+              id="lastName"
+              required
+              placeholder="e.g. Malik"
+            />
           </div>
           <div class="form-group">
             <label for="email">Email Address</label>
@@ -235,8 +245,10 @@
 
           students.forEach((student) => {
             // Safely handle programme rendering in case some records lack it
-            const prog = student.programme ? `<span class="badge-programme">${student.programme}</span>` : '<span style="color:#94a3b8">-</span>';
-            
+            const prog = student.programme
+              ? `<span class="badge-programme">${student.programme}</span>`
+              : '<span style="color:#94a3b8">-</span>';
+
             tbody.innerHTML += `
                         <tr>
                             <td><strong>${student.studentId}</strong></td>
@@ -267,7 +279,7 @@
           firstName: document.getElementById("firstName").value.trim(),
           lastName: document.getElementById("lastName").value.trim(),
           email: document.getElementById("email").value.trim(),
-          programme: document.getElementById("programme").value.trim()
+          programme: document.getElementById("programme").value.trim(),
         };
 
         try {
@@ -286,12 +298,20 @@
             });
           }
 
-          if (!response.ok) throw new Error("Operation failed validation");
+          if (!response.ok) {
+            // Extract the descriptive backend validation message mapped inside your Controller
+            const errorData = await response.json();
+            throw new Error(
+              errorData.message ||
+                errorData.error ||
+                "Save mutation rejected by schema constraints.",
+            );
+          }
 
           toggleForm(false);
           fetchStudents();
         } catch (error) {
-          alert("Error keeping student data. Verify payload constraints.");
+          alert(error.message);
         }
       }
 
@@ -315,13 +335,20 @@
       }
 
       function editStudent(student) {
-        document.getElementById("formTitle").innerText = "Edit Existing Student";
-        document.getElementById("internalId").value = student.id; 
-        document.getElementById("studentId").value = student.studentId;
+        document.getElementById("formTitle").innerText =
+          "Edit Existing Student";
+        document.getElementById("internalId").value = student.id;
+
+        const idInput = document.getElementById("studentId");
+        idInput.value = student.studentId;
+        // Lock the input during edit mode
+        idInput.readOnly = true;
+        idInput.style.backgroundColor = "#f1f5f9";
+
         document.getElementById("firstName").value = student.firstName;
         document.getElementById("lastName").value = student.lastName;
         document.getElementById("email").value = student.email;
-        document.getElementById("programme").value = student.programme || '';
+        document.getElementById("programme").value = student.programme || "";
 
         toggleForm(true);
       }
@@ -341,6 +368,11 @@
           document.getElementById("studentForm").reset();
           document.getElementById("internalId").value = "";
           document.getElementById("formTitle").innerText = "Add New Student";
+
+          // Unlock the input for new entries
+          const idInput = document.getElementById("studentId");
+          idInput.readOnly = false;
+          idInput.style.backgroundColor = "";
         }
       }
     </script>
