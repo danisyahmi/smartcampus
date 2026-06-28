@@ -54,13 +54,14 @@ CREATE TABLE IF NOT EXISTS `bookings` (
     `student_id` VARCHAR(255) NOT NULL,
     `resource_id` VARCHAR(255) NOT NULL,
     `start_time` DATETIME,
-    `status` VARCHAR(255) NOT NULL
+    `status` VARCHAR(255) NOT NULL,
+    `payment_status` ENUM('SUCCESS', 'FAILED') NOT NULL
 );
 
-INSERT INTO `bookings` (`student_id`, `resource_id`, `start_time`, `status`) VALUES
-('B032510001', 'A-302', '2026-06-24 09:00:00', 'ACTIVE'),
-('B032510002', 'ISBN-9783161484100', '2026-06-24 10:30:00', 'ACTIVE'),
-('B032510003', 'A-205', '2026-06-24 08:15:00', 'FAILED');
+INSERT INTO `bookings` (`student_id`, `resource_id`, `start_time`, `status`, `payment_status`) VALUES
+('B032510001', 'A-302', '2026-06-24 09:00:00', 'ACTIVE', 'SUCCESS'),
+('B032510002', 'ISBN-9783161484100', '2026-06-24 10:30:00', 'ACTIVE', 'SUCCESS'),
+('B032510003', 'A-205', '2026-06-24 08:15:00', 'FAILED', 'FAILED');
 
 USE `notification_db`;
 
@@ -76,3 +77,21 @@ CREATE TABLE IF NOT EXISTS `notifications` (
 INSERT INTO `notifications` (`id`, `type`, `message`, `timestamp`, `is_read`, `matric_no`) VALUES
 ('ntf-001', 'BOOKING', 'Your reservation for room A-302 has been confirmed.', '2026-06-24T09:05:00', 0, 'B032510001'),
 ('ntf-002', 'ENROLLMENT', 'Successfully registered for course SE212.', '2026-06-24T09:15:00', 1, 'B032510002');
+
+-- Harga default, jadikan hatga kekal untuk ROOM = RM5.00 dan BOOK = RM3.00
+USE `notification_db`;
+
+CREATE TABLE IF NOT EXISTS `payments` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `booking_type` VARCHAR(50) NOT NULL,
+    `booking_id` BIGINT NOT NULL,
+    `amount` DECIMAL(10, 2) NOT NULL,
+    `matric_no` VARCHAR(255) NOT NULL,
+    `status` VARCHAR(50) NOT NULL,
+    `payment_date` DATETIME
+);
+
+INSERT INTO `payments` (`booking_type`, `booking_id`, `amount`, `matric_no`, `status`, `payment_date`) VALUES
+('ROOM', 1, 5.00, 'B032510001', 'COMPLETE', '2026-06-24 09:05:00'),
+('BOOK', 2, 3.00, 'B032510002', 'COMPLETE', '2026-06-24 10:35:00'),
+('ROOM', 3, 5.00, 'B032510003', 'PENDING',  '2026-06-24 08:20:00');

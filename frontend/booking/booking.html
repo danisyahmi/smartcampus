@@ -183,8 +183,11 @@
 
                 const data = await response.json();
                 showLog(logDiv, data, response.ok);
-                if (response.ok) document.getElementById('reserveForm').reset();
-
+				if (response.ok) {
+				    const roomIdVal = document.getElementById('roomId').value.trim();
+				    const matricVal = document.getElementById('roomStudentId').value.trim();
+				    window.location.href = `../payment/payment.html?type=ROOM&resourceId=${encodeURIComponent(roomIdVal)}&matricNo=${encodeURIComponent(matricVal)}&price=5.00`;
+				}
             } catch (error) {
                 showErrorLog(logDiv, 'Failed to establish connection with Gateway reservation system.');
             }
@@ -210,8 +213,12 @@
 
                 const data = await response.json();
                 showLog(logDiv, data, response.ok);
-                if (response.ok) document.getElementById('loanForm').reset();
-
+				if (response.ok) {
+				    const bookIdVal = document.getElementById('bookId').value.trim(); // ← ambil dulu
+				    const matricVal = document.getElementById('bookStudentId').value.trim(); // ← ambil dulu
+				    document.getElementById('loanForm').reset(); // baru reset
+				    window.location.href = `../payment/payment.html?type=BOOK&resourceId=${encodeURIComponent(bookIdVal)}&matricNo=${encodeURIComponent(matricVal)}&price=3.00`;
+				}
             } catch (error) {
                 showErrorLog(logDiv, 'Failed to establish connection with Gateway loan execution system.');
             }
