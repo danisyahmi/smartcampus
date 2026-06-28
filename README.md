@@ -14,8 +14,6 @@ Install these on a clean machine before you begin. Verify each with the command 
 |---|---|---|
 | Docker Desktop | 24.x | `docker --version` |
 | Docker Compose | 2.x (bundled with Docker Desktop) | `docker compose version` |
-| Java JDK | 21 | `java -version` |
-| Apache Maven | 3.9 | `mvn -version` |
 | Git | any | `git --version` |
 
 > **Windows users:** use PowerShell or Git Bash for all commands below.  
@@ -109,57 +107,6 @@ All REST traffic goes through the **Nginx API Gateway on port 80**. Services are
 
 ---
 
-## Build Without Docker (Maven)
-
-To compile and run unit tests locally without Docker:
-
-```bash
-mvn clean install
-```
-
-To skip tests and just build all JARs:
-
-```bash
-mvn clean install -DskipTests
-```
-
-To build a single service module only (example — Student service):
-
-```bash
-cd student
-mvn clean install
-```
-
----
-
-## Alternative Run Scripts
-
-Convenience wrapper scripts are included at the repository root:
-
-**macOS / Linux:**
-
-```bash
-# Start the stack
-./run.sh up
-
-# Stop the stack
-./run.sh down
-```
-
-**Windows:**
-
-```bat
-:: Start the stack
-run.bat up
-
-:: Stop the stack
-run.bat down
-```
-
-Both scripts call `docker compose up -d` and `docker compose down` respectively.
-
----
-
 ## Stopping the Stack
 
 ```bash
@@ -169,25 +116,6 @@ docker compose down
 # Stop and delete all data (full clean reset)
 docker compose down -v
 ```
-
----
-
-## Running the API Test Script
-
-A full end-to-end test script is included at `test_api.sh`. It exercises every endpoint across all services and reports pass/fail counts.
-
-```bash
-# Make it executable (first time only)
-chmod +x test_api.sh
-
-# Run all tests via the API Gateway (default)
-./test_api.sh
-
-# Run all tests hitting each service directly on its own port
-./test_api.sh direct
-```
-
-The script prints coloured pass/fail output and exits with code `0` if all tests pass or `1` if any fail — compatible with CI pipelines.
 
 ---
 
@@ -208,10 +136,7 @@ smartcampus/
 ├── booking/                  # Booking Service (port 8084)
 ├── report/                   # Report / Analytics Service (port 8085)
 ├── library_system/           # Library SOAP Service (port 8888, standalone JAX-WS)
-├── frontend/                 # Static HTML frontend (port 3000)
-├── run.sh                    # Linux/macOS start/stop helper
-├── run.bat                   # Windows start/stop helper
-└── test_api.sh               # Full end-to-end API test script
+└── frontend/                 # Static HTML frontend (port 3000)
 ```
 
 Each Spring Boot module follows the same internal layout:
